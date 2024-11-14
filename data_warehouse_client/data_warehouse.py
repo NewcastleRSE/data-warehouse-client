@@ -20,7 +20,7 @@ from more_itertools import intersperse
 
 from data_warehouse_client.file_utils import process_sql_template
 from data_warehouse_client.transform_result_format import form_measurements, form_measurement_group
-from data_warehouse_client.type_checks import valtypep
+from data_warehouse_client.type_checks import check_int, check_real, check_datetime, valtypep
 
 
 def get_participants_in_result(results):
@@ -411,6 +411,25 @@ class DataWarehouse:
         return self.return_query_result(query)
 
 
+    def mt_in_studyp(self: object, study: int, measurementtype: int):
+        """
+        Is measurement type in a study?
+        :param measurementtype: measurementtype id
+        :param study: study id
+        :return: True | False
+        """
+        if not self.measurementtypep(study):
+            return False
+        q = """ SELECT COUNT(measurementtype.id) FROM measurementtype
+                WHERE measurementtype.id={} AND measurementtype.study={};
+            """.format(measurementtype, study)
+        res = self.return_query_result(q)
+        if res[0][0] > 0:
+            return True
+        else:
+            return False
+
+
     def add_measurementtype(self: object, study: int, valtype: int, description: str, unit=None) -> int:
         """
         Adds a new measurementtype. A combination of the descriptive names and
@@ -430,7 +449,6 @@ class DataWarehouse:
         if unit != None:
             if not self.unitp(unit):
                 return False, None
-
         
         # Reject existing study, description and valtype combinations
         cur = self.dbConnection.cursor()
@@ -710,6 +728,23 @@ class DataWarehouse:
         res = self.return_query_result(q)
         return res
     
+    
+    def mg_in_studyp(self: object, study: int, measurementgroup: int):
+        """
+        Is a measurement group in a study?
+        :param study: study id
+        :param measurementgroup: measurementgroup id
+        :return: True | False
+        """
+        q= """ SELECT COUNT(measurementgroup.id) FROM measurementgroup
+               WHERE measurementgroup.id={} AND measurementgroup.study={};
+           """.format(measurementgroup, study)
+        res = self.return_query_result(q)
+        if res[0][0] > 0:
+            return True
+        else:
+            return False
+        
 
     def get_type_ids_in_measurement_group(self, study, measurement_group):
         """
@@ -738,7 +773,7 @@ class DataWarehouse:
         return result
     
 
-    def add_measurementgroup(self: object, study: int, description: str) -> int:
+    def add_measurementgroup(self: object, study: int, description: str) -> tuple:
         """
         Adds a new measurementgroup. Group names should be unique within a
         study. If the name already exists the function returns the id;
@@ -772,6 +807,28 @@ class DataWarehouse:
         self.dbConnection.commit()
         return True, free_id
     
+        
+    def connect_mt_to_mg(self: object, study: int, mt: int, mg: int, name=None, optional=False) -> tuple:
+        """
+        """
+        # Check that type and group exists in study
+        if not (self.studyp(study) and
+                self.mt_in_studyp(study, mt) and
+                self.mg_in_studyp(study, mg)
+                ):
+            return False
+        cur = self.dbConnection.cursor()
+        cur.execute("""
+                    INSERT INTO measurementtypetogroup (measurementtype, measurementgroup, name, study, optional)
+                    VALUES (%s, %s, %s, %s, %s);
+                    """,
+                    (mt, mg,
+                     ("null" if not name else name),
+                     study,
+                     ("false" if not optional else optional)))
+        self.dbConnection.commit()
+        return True
+
 
     ###########################################################################
     # Participant methods
@@ -1116,7 +1173,7 @@ class DataWarehouse:
 
     ###########################################################################
     # Units methods
-    ###########################################################################    
+    ###########################################################################
     def unitp(self: object, id: int) -> bool:
         """
         Unit existence predicate
@@ -1159,3 +1216,116 @@ class DataWarehouse:
                     (free_id, name, study))  # insert the new entry
         self.dbConnection.commit()
         return True, free_id
+
+
+    ###########################################################################
+    # Bounds methods
+    # These should be consolidated into a common function
+    ###########################################################################
+    def add_boundsint(self: object, study: int, measurementtype: int, minval: int, maxval: int) -> tuple:
+        """
+        Add bounds to the boundsint table
+        TODO: the study doesn't really need to be supplied, it can be looked up
+              in the measurementtype table
+        TODO: check that the valtype field in measurementype matches
+        :param study: the study
+        :param measurementtype: the measurement type
+        :param minval: minimum integer value
+        :param maxval: maximum integer value
+        :returns: True | False
+        """
+        if not (self.studyp(study) and
+                self.measurementtypep(study)):
+            return False, "Type 1"
+        if not self.mt_in_studyp(study, measurementtype):
+            return False, "Type 2"
+        if not (check_int(minval) and check_int(maxval) and minval<=maxval):
+            return False, "Type 3"
+        
+        cur = self.dbConnection.cursor()
+        q = """
+            SELECT measurementtype FROM boundsint
+            WHERE boundsint.study={} AND boundsint.measurementtype={};
+            """.format(study, measurementtype)
+        res = self.return_query_result(q)
+        if len(res) > 0:
+            return False, "Type 4"
+        cur.execute("""
+                    INSERT INTO boundsint (measurementtype, minval, maxval, study)
+                    VALUES (%s, %s, %s, %s);
+                    """,
+                    (measurementtype, minval, maxval, study))
+        self.dbConnection.commit()
+        return True
+    
+    def add_boundsreal(self: object, study: int, measurementtype: int, minval: float, maxval: float) -> tuple:
+        """
+        Add bounds to the boundsreal table
+        TODO: the study doesn't really need to be supplied, it can be looked up
+              in the measurementtype table
+        TODO: check that the valtype field in measurementype matches
+        :param study: the study
+        :param measurementtype: the measurement type
+        :param minval: minimum integer value
+        :param maxval: maximum integer value
+        :returns: True | False
+        """
+        if not (self.studyp(study) and
+                self.measurementtypep(study)):
+            return False, "Type 1"
+        if not self.mt_in_studyp(study, measurementtype):
+            return False, "Type 2"
+        if not (check_real(minval) and check_real(maxval) and minval<=maxval):
+            return False, "Type 3"
+        
+        cur = self.dbConnection.cursor()
+        q = """
+            SELECT measurementtype FROM boundsreal
+            WHERE boundsreal.study={} AND boundsreal.measurementtype={};
+            """.format(study, measurementtype)
+        res = self.return_query_result(q)
+        if len(res) > 0:
+            return False, "Type 4"
+        cur.execute("""
+                    INSERT INTO boundsreal (measurementtype, minval, maxval, study)
+                    VALUES (%s, %s, %s, %s);
+                    """,
+                    (measurementtype, minval, maxval, study))
+        self.dbConnection.commit()
+        return True
+    
+    def add_boundsdatetime(self: object, study: int, measurementtype: int, minval: int, maxval: int) -> tuple:
+        """
+        Add bounds to the boundsdatetime table
+        TODO: the study doesn't really need to be supplied, it can be looked up
+              in the measurementtype table
+        TODO: check that the valtype field in measurementype matches
+        :param study: the study
+        :param measurementtype: the measurement type
+        :param minval: minimum integer value
+        :param maxval: maximum integer value
+        :returns: True | False
+        """
+        if not (self.studyp(study) and
+                self.measurementtypep(study)):
+            return False
+        if not self.mt_in_studyp(study, measurementtype):
+            return False
+        if not (check_datetime(minval) and check_datetime(maxval) and minval<=maxval):
+            return False
+        
+        cur = self.dbConnection.cursor()
+        q = """
+            SELECT measurementtype FROM boundsdatetime
+            WHERE boundsdatetime.study={} AND boundsdatetime.measurementtype={};
+            """.format(study, measurementtype)
+        res = self.return_query_result(q)
+        if len(res) > 0:
+            return False
+        cur.execute("""
+                    INSERT INTO boundsdatetime (measurementtype, minval, maxval, study)
+                    VALUES (%s, %s, %s, %s);
+                    """,
+                    (measurementtype, minval, maxval, study))
+        self.dbConnection.commit()
+        return True
