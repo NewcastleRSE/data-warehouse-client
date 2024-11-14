@@ -188,6 +188,7 @@ class DataWarehouse:
             exit("Unable to connect to the database! Exiting.\n" + str(e))
         print("Init successful! Running queries.\n")
 
+
     ###########################################################################
     # General SQL methods
     ###########################################################################
@@ -201,6 +202,7 @@ class DataWarehouse:
         cur.execute(query_text)
         return cur.fetchall()
 
+
     def exec_insert_with_return(self, query_text):
         """
         Executes INSERT, commits the outcome and returns the result from the RETURNING clause.
@@ -212,6 +214,7 @@ class DataWarehouse:
         self.dbConnection.commit()
         return cur.fetchone()
 
+
     def exec_sql_with_no_return(self, query_text):
         """
         executes SQL and commits the outcome. Used to execute INSERT, UPDATE and DELETE statements with no RETURNING.
@@ -220,6 +223,7 @@ class DataWarehouse:
         cur = self.dbConnection.cursor()
         cur.execute(query_text)
         self.dbConnection.commit()
+
 
     ###########################################################################
     # Measurements methods
@@ -250,6 +254,7 @@ class DataWarehouse:
         raw_results = self.return_query_result(query)
         return form_measurements(raw_results)
 
+
     def aggregate_measurements(self, study, measurement_type, aggregation, participant=-1, measurement_group=-1,
                                group_instance=-1, trial=-1, start_time=-1, end_time=-1):
         """
@@ -273,6 +278,7 @@ class DataWarehouse:
         q = f'SELECT {aggregation} ( {field_holding_value(val_type)} ) {core_sql_from_for_measurements()} {w}'
         raw_result = self.return_query_result(q)
         return raw_result[0][0]
+
 
     def get_measurements_with_value_test(self, study, measurement_type, value_test_condition, participant=-1,
                                          measurement_group=-1, group_instance=-1, trial=-1, start_time=-1, end_time=-1):
@@ -305,6 +311,7 @@ class DataWarehouse:
         raw_results = self.return_query_result(query)
         return form_measurements(raw_results)
 
+
     def get_measurements_by_cohort(self, study, cohort_id, participant=-1, measurement_type=-1,
                                    measurement_group=-1, group_instance=-1, trial=-1, start_time=-1, end_time=-1):
         """
@@ -331,6 +338,7 @@ class DataWarehouse:
         raw_results = self.return_query_result(query)
         return form_measurements(raw_results)
 
+
     def mk_value_tests(self, value_test_conditions, study):
         """
         Helper function used to creat a Where clause to find measurements that fail the conditions
@@ -350,9 +358,21 @@ class DataWarehouse:
             all_conditions = all_conditions + [cond]
         return ' '.join([elem for elem in intersperse(" OR ", all_conditions)])
 
+
     ###########################################################################
     # Measurement Type methods
     ###########################################################################
+    def measurementtypep(self: object, id: int) -> bool:
+        """
+        measurementtype existence predicate
+        :param: measurementtype id
+        :return: True if id exists, False if not
+        """
+        q = " SELECT (id) FROM measurementtype WHERE measurementtype.id={}; ".format(id)
+        res = self.return_query_result(q)
+        return len(res)>0
+
+
     def num_types_in_a_measurement_group(self, study, measurement_group):
         """
         A helper function that returns the number of measurement types in a measurement group
@@ -391,7 +411,7 @@ class DataWarehouse:
         return self.return_query_result(query)
 
 
-    def add_measurement_type(self: object, study: int, valtype: int, description: str, unit=None) -> int:
+    def add_measurementtype(self: object, study: int, valtype: int, description: str, unit=None) -> int:
         """
         Adds a new measurementtype. A combination of the descriptive names and
         the value type should be unique within a study. If the combination
@@ -401,8 +421,8 @@ class DataWarehouse:
         :param study: the study id
         :param valtype: the value type the measurement type represents
         :param description: the description of the measurement type
-        :param unit (optional): the 
-        :return: (unit added, measurementtype id)
+        :param unit (optional): the id of the unit attached to the measurementtype
+        :return: (measurementtype added, measurementtype id)
         """
         # Reject non-present ids and value types
         if not (self.studyp(study) and valtypep(valtype)):
@@ -1047,6 +1067,52 @@ class DataWarehouse:
         else:
             return found, None
 
+
+    def add_category(self: object, study: int, cnames: list, measurementtype: int) -> int:
+        """
+        Adds a new measurement category. The organisation of the category data
+        is up to the user. The category ids will be auto-generated in the order
+        in which the category values are listed in cvalues. cnames should be
+        in ascending order for ordinal data - it is assumed that the caller has
+        taken care of this.
+        :param study: the study id
+        :param name: the name of the category
+        :param cnames: the values in the category
+        :param measurementtype: the measurementtype id
+        :return: category added
+        """
+        # Reject invalid inputs
+        if not (self.studyp(study) and
+                (len(cnames) > 0)
+                ):
+            return (False, "Invalid parameter(s)")
+
+        cur = self.dbConnection.cursor()
+
+        # Check measurementtype is in the same study
+        q= """ SELECT (id) FROM measurementtype
+               WHERE measurementtype.id={} AND measurementtype.study={};
+           """.format(measurementtype, study)
+        res = self.return_query_result(q)
+        if not (len(res) > 0):
+            return (False, "measurementtype not found in study")
+
+        # Check for empty ids in the cnames.
+        # TODO: This should give more information or possibly raise an execption
+        for cname in cnames:
+            if not cname:
+                return False
+
+        # Reject existing study, description and valtype combinations
+        for cid, cname in enumerate(cnames):
+            cur.execute("""
+                        INSERT INTO category (measurementtype, categoryid, categoryname, study)
+                        VALUES (%s, %s, %s, %s);
+                        """,
+                        (measurementtype, cid, cname, study))  # insert the new entry
+        self.dbConnection.commit()
+        return True
+    
 
     ###########################################################################
     # Units methods
