@@ -472,7 +472,7 @@ class DataWarehouse:
                     INSERT INTO measurementtype (id, description, valtype, units, study)
                     VALUES (%s, %s, %s, %s, %s);
                     """,
-                    (free_id, description, valtype, ("NULL" if not unit else unit), study))  # insert the new entry
+                    (free_id, description, valtype, unit, study))  # insert the new entry
         self.dbConnection.commit()
         return True, free_id
 
