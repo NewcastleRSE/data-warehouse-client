@@ -20,6 +20,7 @@ from more_itertools import intersperse
 
 from data_warehouse_client.file_utils import process_sql_template
 from data_warehouse_client.transform_result_format import form_measurements, form_measurement_group
+from data_warehouse_client.type_checks import check_int, check_real, check_datetime, valtypep
 
 
 def get_participants_in_result(results):
@@ -187,6 +188,46 @@ class DataWarehouse:
             exit("Unable to connect to the database! Exiting.\n" + str(e))
         print("Init successful! Running queries.\n")
 
+
+    ###########################################################################
+    # General SQL methods
+    ###########################################################################
+    def return_query_result(self, query_text):
+        """
+        executes an SQL query. It is used for SELECT queries.
+        :param query_text: the SQL
+        :return: the result as a list of rows.
+        """
+        cur = self.dbConnection.cursor()
+        cur.execute(query_text)
+        return cur.fetchall()
+
+
+    def exec_insert_with_return(self, query_text):
+        """
+        Executes INSERT, commits the outcome and returns the result from the RETURNING clause.
+        :param query_text: the SQL
+        :return the result from the RETURNING clause
+        """
+        cur = self.dbConnection.cursor()
+        cur.execute(query_text)
+        self.dbConnection.commit()
+        return cur.fetchone()
+
+
+    def exec_sql_with_no_return(self, query_text):
+        """
+        executes SQL and commits the outcome. Used to execute INSERT, UPDATE and DELETE statements with no RETURNING.
+        :param query_text: the SQL
+        """
+        cur = self.dbConnection.cursor()
+        cur.execute(query_text)
+        self.dbConnection.commit()
+
+
+    ###########################################################################
+    # Measurements methods
+    ###########################################################################
     def get_measurements(self, study, participant=-1, measurement_type=-1, measurement_group=-1, group_instance=-1,
                          trial=-1, start_time=-1, end_time=-1):
         """
@@ -213,6 +254,7 @@ class DataWarehouse:
         raw_results = self.return_query_result(query)
         return form_measurements(raw_results)
 
+
     def aggregate_measurements(self, study, measurement_type, aggregation, participant=-1, measurement_group=-1,
                                group_instance=-1, trial=-1, start_time=-1, end_time=-1):
         """
@@ -236,6 +278,7 @@ class DataWarehouse:
         q = f'SELECT {aggregation} ( {field_holding_value(val_type)} ) {core_sql_from_for_measurements()} {w}'
         raw_result = self.return_query_result(q)
         return raw_result[0][0]
+
 
     def get_measurements_with_value_test(self, study, measurement_type, value_test_condition, participant=-1,
                                          measurement_group=-1, group_instance=-1, trial=-1, start_time=-1, end_time=-1):
@@ -268,6 +311,7 @@ class DataWarehouse:
         raw_results = self.return_query_result(query)
         return form_measurements(raw_results)
 
+
     def get_measurements_by_cohort(self, study, cohort_id, participant=-1, measurement_type=-1,
                                    measurement_group=-1, group_instance=-1, trial=-1, start_time=-1, end_time=-1):
         """
@@ -294,29 +338,6 @@ class DataWarehouse:
         raw_results = self.return_query_result(query)
         return form_measurements(raw_results)
 
-    def num_types_in_a_measurement_group(self, study, measurement_group):
-        """
-        A helper function that returns the number of measurement types in a measurement group
-        :param study: study id
-        :param measurement_group: measurement group id
-        :return: number of measurement types in the measurement group
-        """
-        mappings = {"measurement_group": str(measurement_group), "study": str(study)}
-        query = process_sql_template("num_types_in_a_measurement_group.sql", mappings)
-        num_types = self.return_query_result(query)
-        return num_types[0][0]
-
-    def get_types_in_a_measurement_group(self, study, measurement_group):
-        """
-        A helper function that returns the names of the measurement types in a measurement group
-        :param study: study id
-        :param measurement_group: measurement group id
-        :return: list of names of the measurement types in the measurement group
-        """
-        mappings = {"measurement_group": str(measurement_group), "study": str(study)}
-        query = process_sql_template("types_in_a_measurement_group.sql", mappings)
-        type_names = self.return_query_result(query)
-        return type_names
 
     def mk_value_tests(self, value_test_conditions, study):
         """
@@ -337,81 +358,46 @@ class DataWarehouse:
             all_conditions = all_conditions + [cond]
         return ' '.join([elem for elem in intersperse(" OR ", all_conditions)])
 
-    def get_measurement_group_instances(self, study, measurement_group, value_test_conditions,
-                                        participant=-1, trial=-1, start_time=-1, end_time=-1):
-        """
-        Return all instances of a measurement group in which one or more of the measurements within the
-            instance meet some specified criteria
-        :param measurement_group: a measurement group
-        :param study: a study id
-        :param value_test_conditions: a list where each element is takes the following form:
-                                    (measurementType,condition)
-                                       where condition is a string holding the condition
-                                       against which the value in each measurement is compared.
-        :param participant: a participant id
-        :param trial: a trial id
-        :param start_time: the start of a time period of interest
-        :param end_time: the end of a time period of interest
-        :return: a list of measurements. Each measurement is held in a list with the following fields:
-                    id,time,study,participant,measurementType,typeName,measurementGroup,
-                    groupInstance,trial,valType,value
-        """
-        problem_q = ""  # returns the instance ids of all instances that fail the criteria
-        problem_q += " SELECT measurement.groupinstance "
-        problem_q += core_sql_from_for_measurements()
-        (w, first_condition) = core_sql_for_where_clauses(study, participant, -1, measurement_group, -1, trial,
-                                                          start_time, end_time)
-        problem_q += w
-        if len(value_test_conditions) > 0:
-            problem_q += " AND (" + self.mk_value_tests(value_test_conditions, study) + ")"
 
-        outer_query = core_sql_for_measurements()
-        outer_query += " " + w
-        if len(value_test_conditions) > 0:
-            outer_query += " AND measurement.groupinstance NOT IN (" + problem_q + ")"
-        outer_query += " ORDER BY groupinstance, measurementtype"
-        outer_query += ";"
-        raw_results = self.return_query_result(outer_query)
-        formed_measurements = form_measurements(raw_results)
-        return form_measurement_group(self, study, measurement_group, formed_measurements)
-
-    def get_measurement_group_instances_for_cohort(self, study, measurement_group, participants, value_test_conditions,
-                                                   trial=-1, start_time=-1, end_time=-1):
+    ###########################################################################
+    # Measurement Type methods
+    ###########################################################################
+    def measurementtypep(self: object, id: int) -> bool:
         """
-        Return all instances of a measurement group in which one or more of the measurements within the
-            instance meet some specified criteria for the specified cohort of participants
-        :param measurement_group: a measurement group
-        :param study: a study id
-        :param participants: a list of participant ids
-        :param value_test_conditions: a list where each element is takes the following form:
-                                    (measurementType,condition)
-                                       where condition is a string holding the condition
-                                       against which the value in each measurement is compared.
-        :param trial: a trial id
-        :param start_time: the start of a time period of interest
-        :param end_time: the end of a time period of interest
-        :return: a list of measurements. Each measurement is held in a list with the following fields:
-                    id,time,study,participant,measurementType,typeName,measurementGroup,
-                    groupInstance,trial,valType,value
+        measurementtype existence predicate
+        :param: measurementtype id
+        :return: True if id exists, False if not
         """
-        problem_q = ""  # returns the instance ids of all instances that fail the criteria
-        problem_q += " SELECT measurement.groupinstance "
-        problem_q += core_sql_from_for_measurements()
-        where_clause = core_sql_for_where_clauses_for_cohort(study, participants, -1, measurement_group,
-                                                             -1, trial, start_time, end_time)
-        problem_q += where_clause
-        if len(value_test_conditions) > 0:
-            problem_q += " AND (" + self.mk_value_tests(value_test_conditions, study) + ")"
+        q = " SELECT (id) FROM measurementtype WHERE measurementtype.id={}; ".format(id)
+        res = self.return_query_result(q)
+        return len(res)>0
 
-        outer_query = core_sql_for_measurements()
-        outer_query += where_clause
-        if len(value_test_conditions) > 0:
-            outer_query += " AND measurement.groupinstance NOT IN (" + problem_q + ")"
-        outer_query += " ORDER BY groupinstance, measurementtype"
-        outer_query += ";"
-        raw_results = self.return_query_result(outer_query)
-        formed_measurements = form_measurements(raw_results)
-        return form_measurement_group(self, study, measurement_group, formed_measurements)
+
+    def num_types_in_a_measurement_group(self, study, measurement_group):
+        """
+        A helper function that returns the number of measurement types in a measurement group
+        :param study: study id
+        :param measurement_group: measurement group id
+        :return: number of measurement types in the measurement group
+        """
+        mappings = {"measurement_group": str(measurement_group), "study": str(study)}
+        query = process_sql_template("num_types_in_a_measurement_group.sql", mappings)
+        num_types = self.return_query_result(query)
+        return num_types[0][0]
+
+
+    def get_types_in_a_measurement_group(self, study, measurement_group):
+        """
+        A helper function that returns the names of the measurement types in a measurement group
+        :param study: study id
+        :param measurement_group: measurement group id
+        :return: list of names of the measurement types in the measurement group
+        """
+        mappings = {"measurement_group": str(measurement_group), "study": str(study)}
+        query = process_sql_template("types_in_a_measurement_group.sql", mappings)
+        type_names = self.return_query_result(query)
+        return type_names
+
 
     def get_measurement_type_info(self, study, measurement_type_id):
         """
@@ -424,36 +410,73 @@ class DataWarehouse:
         query = process_sql_template("get_measurement_type_info.sql", mappings)
         return self.return_query_result(query)
 
-    def return_query_result(self, query_text):
-        """
-        executes an SQL query. It is used for SELECT queries.
-        :param query_text: the SQL
-        :return: the result as a list of rows.
-        """
-        cur = self.dbConnection.cursor()
-        cur.execute(query_text)
-        return cur.fetchall()
 
-    def exec_insert_with_return(self, query_text):
+    def mt_in_studyp(self: object, study: int, measurementtype: int):
         """
-        Executes INSERT, commits the outcome and returns the result from the RETURNING clause.
-        :param query_text: the SQL
-        :return the result from the RETURNING clause
+        Is measurement type in a study?
+        :param measurementtype: measurementtype id
+        :param study: study id
+        :return: True | False
         """
+        if not self.measurementtypep(study):
+            return False
+        q = """ SELECT COUNT(measurementtype.id) FROM measurementtype
+                WHERE measurementtype.id={} AND measurementtype.study={};
+            """.format(measurementtype, study)
+        res = self.return_query_result(q)
+        if res[0][0] > 0:
+            return True
+        else:
+            return False
+
+
+    def add_measurementtype(self: object, study: int, valtype: int, description: str, unit=None) -> int:
+        """
+        Adds a new measurementtype. A combination of the descriptive names and
+        the value type should be unique within a study. If the combination
+        already exists the function returns the id; otherwise it will create a
+        new entry and return the id. If study, valtype or unit are not found, then
+        the method returns (False, None)
+        :param study: the study id
+        :param valtype: the value type the measurement type represents
+        :param description: the description of the measurement type
+        :param unit (optional): the id of the unit attached to the measurementtype
+        :return: (measurementtype added, measurementtype id)
+        """
+        # Reject non-present ids and value types
+        if not (self.studyp(study) and valtypep(valtype)):
+            return False, None
+        if unit != None:
+            if not self.unitp(unit):
+                return False, None
+        
+        # Reject existing study, description and valtype combinations
         cur = self.dbConnection.cursor()
-        cur.execute(query_text)
+        q = """
+            SELECT (id) FROM measurementtype
+            WHERE study={} AND description='{}' AND valtype={};
+            """.format(study, description, valtype)
+        res = self.return_query_result(q)
+        if len(res) > 0:
+            return False, res[0][0]
+        
+        # Add the new measurementtype
+        q = " SELECT MAX(id) FROM measurementtype; "
+        res = self.return_query_result(q)  # find the biggest id
+        max_id = res[0][0]
+        if max_id is None:
+            free_id = 0
+        else:
+            free_id = max_id + 1  # the next free id
+        cur.execute("""
+                    INSERT INTO measurementtype (id, description, valtype, units, study)
+                    VALUES (%s, %s, %s, %s, %s);
+                    """,
+                    (free_id, description, valtype, ('null' if unit!=None else unit), study))  # insert the new entry
         self.dbConnection.commit()
-        return cur.fetchone()
+        return True, free_id
 
-    def exec_sql_with_no_return(self, query_text):
-        """
-        executes SQL and commits the outcome. Used to execute INSERT, UPDATE and DELETE statements with no RETURNING.
-        :param query_text: the SQL
-        """
-        cur = self.dbConnection.cursor()
-        cur.execute(query_text)
-        self.dbConnection.commit()
-
+    
     ###########################################################################
     # Measurement Group methods
     ###########################################################################
@@ -476,6 +499,7 @@ class DataWarehouse:
             # print("Event_type", measurementgroup_description, " not found in measurementgroup.description")
             return found, res
 
+
     def get_all_measurement_groups(self, study):
         """
         A helper function that returns information on all the measurement groups in a study
@@ -485,6 +509,7 @@ class DataWarehouse:
         mappings = {"study": str(study)}
         query = process_sql_template("get_all_measurement_groups.sql", mappings)
         return self.return_query_result(query)
+
 
     def get_all_measurement_groups_and_types_in_a_study(self, study):
         """
@@ -497,6 +522,7 @@ class DataWarehouse:
         mappings = {"study": str(study)}
         query = process_sql_template("get_all_measurement_groups_and_types_in_a_study.sql", mappings)
         return self.return_query_result(query)
+
 
     def insert_measurement_group(self, study, measurement_group, values,
                                  time=-1, trial=None, participant=None, source=None, cursor=None):
@@ -594,6 +620,85 @@ class DataWarehouse:
             cur.close()
         return success, group_instance, error_message
 
+
+    def get_measurement_group_instances(self, study, measurement_group, value_test_conditions,
+                                        participant=-1, trial=-1, start_time=-1, end_time=-1):
+        """
+        Return all instances of a measurement group in which one or more of the measurements within the
+            instance meet some specified criteria
+        :param measurement_group: a measurement group
+        :param study: a study id
+        :param value_test_conditions: a list where each element is takes the following form:
+                                    (measurementType,condition)
+                                       where condition is a string holding the condition
+                                       against which the value in each measurement is compared.
+        :param participant: a participant id
+        :param trial: a trial id
+        :param start_time: the start of a time period of interest
+        :param end_time: the end of a time period of interest
+        :return: a list of measurements. Each measurement is held in a list with the following fields:
+                    id,time,study,participant,measurementType,typeName,measurementGroup,
+                    groupInstance,trial,valType,value
+        """
+        problem_q = ""  # returns the instance ids of all instances that fail the criteria
+        problem_q += " SELECT measurement.groupinstance "
+        problem_q += core_sql_from_for_measurements()
+        (w, first_condition) = core_sql_for_where_clauses(study, participant, -1, measurement_group, -1, trial,
+                                                          start_time, end_time)
+        problem_q += w
+        if len(value_test_conditions) > 0:
+            problem_q += " AND (" + self.mk_value_tests(value_test_conditions, study) + ")"
+
+        outer_query = core_sql_for_measurements()
+        outer_query += " " + w
+        if len(value_test_conditions) > 0:
+            outer_query += " AND measurement.groupinstance NOT IN (" + problem_q + ")"
+        outer_query += " ORDER BY groupinstance, measurementtype"
+        outer_query += ";"
+        raw_results = self.return_query_result(outer_query)
+        formed_measurements = form_measurements(raw_results)
+        return form_measurement_group(self, study, measurement_group, formed_measurements)
+
+
+    def get_measurement_group_instances_for_cohort(self, study, measurement_group, participants, value_test_conditions,
+                                                   trial=-1, start_time=-1, end_time=-1):
+        """
+        Return all instances of a measurement group in which one or more of the measurements within the
+            instance meet some specified criteria for the specified cohort of participants
+        :param measurement_group: a measurement group
+        :param study: a study id
+        :param participants: a list of participant ids
+        :param value_test_conditions: a list where each element is takes the following form:
+                                    (measurementType,condition)
+                                       where condition is a string holding the condition
+                                       against which the value in each measurement is compared.
+        :param trial: a trial id
+        :param start_time: the start of a time period of interest
+        :param end_time: the end of a time period of interest
+        :return: a list of measurements. Each measurement is held in a list with the following fields:
+                    id,time,study,participant,measurementType,typeName,measurementGroup,
+                    groupInstance,trial,valType,value
+        """
+        problem_q = ""  # returns the instance ids of all instances that fail the criteria
+        problem_q += " SELECT measurement.groupinstance "
+        problem_q += core_sql_from_for_measurements()
+        where_clause = core_sql_for_where_clauses_for_cohort(study, participants, -1, measurement_group,
+                                                             -1, trial, start_time, end_time)
+        problem_q += where_clause
+        if len(value_test_conditions) > 0:
+            problem_q += " AND (" + self.mk_value_tests(value_test_conditions, study) + ")"
+
+        outer_query = core_sql_for_measurements()
+        outer_query += where_clause
+        if len(value_test_conditions) > 0:
+            outer_query += " AND measurement.groupinstance NOT IN (" + problem_q + ")"
+        outer_query += " ORDER BY groupinstance, measurementtype"
+        outer_query += ";"
+        raw_results = self.return_query_result(outer_query)
+        formed_measurements = form_measurements(raw_results)
+        return form_measurement_group(self, study, measurement_group, formed_measurements)
+
+
     def n_mg_instances(self, mg_id, study):
         """
         Return the number of instances of a measurement group in a study
@@ -607,6 +712,7 @@ class DataWarehouse:
         q += " ;"
         res = self.return_query_result(q)
         return res[0][0]
+
 
     def mg_instances(self, mg_id, study):
         """
@@ -622,6 +728,24 @@ class DataWarehouse:
         res = self.return_query_result(q)
         return res
     
+    
+    def mg_in_studyp(self: object, study: int, measurementgroup: int):
+        """
+        Is a measurement group in a study?
+        :param study: study id
+        :param measurementgroup: measurementgroup id
+        :return: True | False
+        """
+        q= """ SELECT COUNT(measurementgroup.id) FROM measurementgroup
+               WHERE measurementgroup.id={} AND measurementgroup.study={};
+           """.format(measurementgroup, study)
+        res = self.return_query_result(q)
+        if res[0][0] > 0:
+            return True
+        else:
+            return False
+        
+
     def get_type_ids_in_measurement_group(self, study, measurement_group):
         """
         A helper function that returns the ids of the measurement types in a measurement group
@@ -648,6 +772,64 @@ class DataWarehouse:
             result = result + [r[0]]
         return result
     
+
+    def add_measurementgroup(self: object, study: int, description: str) -> tuple:
+        """
+        Adds a new measurementgroup. Group names should be unique within a
+        study. If the name already exists the function returns the id;
+        otherwise it will create a new entry and return the id.
+        :param study: the study id
+        :param name: the name of the measurement group
+        :return: (unit added, unit id)
+        """
+        if not self.studyp(study):
+            return False, None
+        
+        cur = self.dbConnection.cursor()
+        q = " SELECT (id) FROM measurementgroup WHERE study={} AND description='{}';  ".format(study, description)
+        res = self.return_query_result(q)
+        mg_already_exists = len(res) > 0
+        if mg_already_exists:
+            return False, res[0][0]
+        
+        q = " SELECT MAX(id) FROM measurementgroup; "
+        res = self.return_query_result(q)  # find the biggest id
+        max_id = res[0][0]
+        if max_id is None:
+            free_id = 0
+        else:
+            free_id = max_id + 1  # the next free id
+        cur.execute("""
+                    INSERT INTO measurementgroup (id, description, study)
+                    VALUES (%s, %s, %s);
+                    """,
+                    (free_id, description, study))  # insert the new entry
+        self.dbConnection.commit()
+        return True, free_id
+    
+        
+    def connect_mt_to_mg(self: object, study: int, mt: int, mg: int, name=None, optional=False) -> tuple:
+        """
+        """
+        # Check that type and group exists in study
+        if not (self.studyp(study) and
+                self.mt_in_studyp(study, mt) and
+                self.mg_in_studyp(study, mg)
+                ):
+            return False
+        cur = self.dbConnection.cursor()
+        cur.execute("""
+                    INSERT INTO measurementtypetogroup (measurementtype, measurementgroup, name, study, optional)
+                    VALUES (%s, %s, %s, %s, %s);
+                    """,
+                    (mt, mg,
+                     ("null" if not name else name),
+                     study,
+                     ("false" if not optional else optional)))
+        self.dbConnection.commit()
+        return True
+
+
     ###########################################################################
     # Participant methods
     ###########################################################################
@@ -669,6 +851,7 @@ class DataWarehouse:
             # print("Participant", participant, " not found in participant.id")
             return found, res
 
+
     def get_participant(self, study_id, local_participant_id):
         """
         maps from a participantid that is local to the study, to the unique id stored with measurements in the warehouse
@@ -687,6 +870,7 @@ class DataWarehouse:
             # print("Participant", local_participant_id, " not found in participant.participantid")
             return found, res
 
+
     def get_participants(self, study_id):
         """
         Get all participants in a study
@@ -697,6 +881,7 @@ class DataWarehouse:
             " WHERE participant.study       = " + str(study_id) + ";"
         res = self.return_query_result(q)
         return res
+
 
     def add_participant(self, study_id, local_participant_id):
         """
@@ -721,6 +906,7 @@ class DataWarehouse:
                     (free_id, local_participant_id, study_id))  # insert the new entry
         self.dbConnection.commit()
         return free_id
+
 
     def add_participant_if_new(self, study_id, participant_id, local_participant_id):
         """
@@ -748,10 +934,22 @@ class DataWarehouse:
             self.dbConnection.commit()
             return True, participant_id
 
+
     ###########################################################################
     # Study methods
     ###########################################################################
-    def get_studies(self) -> list:
+    def studyp(self: object, id: int) -> bool:
+        """
+        Study existence predicate
+        :param: study id
+        :return: True if id exists, False if not
+        """
+        q = " SELECT (id) FROM study WHERE study.id={}; ".format(id)
+        res = self.return_query_result(q)
+        return len(res)>0
+
+
+    def get_studies(self: object) -> list:
         """
         Get all studies in the data warehouse
         :return: list of all the studies (id and studyid)
@@ -760,7 +958,8 @@ class DataWarehouse:
         res = self.return_query_result(q)
         return res
 
-    def get_study(self, local_study_id: str) -> tuple:
+
+    def get_study(self: object, local_study_id: str) -> tuple:
         """
         Gets the unique id of a study from a local study ID
         :param local_study_id: the local study id (researcher name for the study)
@@ -769,6 +968,7 @@ class DataWarehouse:
         q = " SELECT id FROM study WHERE study.studyid ='{}'; ".format(local_study_id)
         res = self.return_query_result(q)
         return (len(res) > 0), tuple(res)
+
 
     def add_study(self: object, local_study_id: str) -> int:
         """
@@ -792,6 +992,7 @@ class DataWarehouse:
         self.dbConnection.commit()
         return free_id
     
+
     def add_study_if_unique(self: object, local_study_id: str) -> tuple:
         """
         Add a study into the data warehouse unless its label already exists
@@ -799,7 +1000,7 @@ class DataWarehouse:
         :return (study added, (studyid(s)))
         """
         cur = self.dbConnection.cursor()
-        q = " SELECT (id) FROM study WHERE studyid='{}';".format(local_study_id)
+        q = " SELECT (id) FROM study WHERE studyid='{}'; ".format(local_study_id)
         res = self.return_query_result(q)
         studyid_already_exists = len(res) > 0
         if studyid_already_exists:
@@ -807,6 +1008,7 @@ class DataWarehouse:
         else:
             return True, (self.add_study(local_study_id),)
     
+
     ###########################################################################
     # Trial methods
     ###########################################################################
@@ -828,6 +1030,7 @@ class DataWarehouse:
             # print("Trial", trial_description, " not found in trial table")
             return found, None
 
+
     def get_trials_in_study(self: object, study: int) -> list:
         """
         Get all trials in the given study ID
@@ -836,6 +1039,7 @@ class DataWarehouse:
         q = " SELECT (id, study, description) FROM trial WHERE trial.study={} ; ".format(study)
         res = self.return_query_result(q)
         return res
+
 
     def add_trial(self: object, study: int, trial_description: str) -> int:
         """
@@ -860,6 +1064,7 @@ class DataWarehouse:
         self.dbConnection.commit()
         return free_id
     
+
     def add_trial_if_unique(self: object, study: int, trial_description: str) -> tuple:
         """
         Add a trial into the data warehouse unless its label already exists in the given study
@@ -868,7 +1073,7 @@ class DataWarehouse:
         :return (trial added, (id(s)))
         """
         cur = self.dbConnection.cursor()
-        q = " SELECT (id) FROM trial WHERE description='{}' AND study={};".format(trial_description, study)
+        q = " SELECT (id) FROM trial WHERE description='{}' AND study={}; ".format(trial_description, study)
         res = self.return_query_result(q)
         trialyid_already_exists = len(res) > 0
         if trialyid_already_exists:
@@ -876,6 +1081,7 @@ class DataWarehouse:
         else:
             return True, (self.add_trial(study, trial_description),)
     
+
     ###########################################################################
     # Category methods
     ###########################################################################
@@ -898,6 +1104,7 @@ class DataWarehouse:
         else:
             return found, None
 
+
     def get_category_name_from_id(self, study, measurement_type, category_id):
         """
         return the category name of a category
@@ -916,3 +1123,209 @@ class DataWarehouse:
             return found, res[0][0]
         else:
             return found, None
+
+
+    def add_category(self: object, study: int, cnames: list, measurementtype: int) -> int:
+        """
+        Adds a new measurement category. The organisation of the category data
+        is up to the user. The category ids will be auto-generated in the order
+        in which the category values are listed in cvalues. cnames should be
+        in ascending order for ordinal data - it is assumed that the caller has
+        taken care of this.
+        :param study: the study id
+        :param name: the name of the category
+        :param cnames: the values in the category
+        :param measurementtype: the measurementtype id
+        :return: category added
+        """
+        # Reject invalid inputs
+        if not (self.studyp(study) and
+                (len(cnames) > 0)
+                ):
+            return (False, "Invalid parameter(s)")
+
+        cur = self.dbConnection.cursor()
+
+        # Check measurementtype is in the same study
+        q= """ SELECT (id) FROM measurementtype
+               WHERE measurementtype.id={} AND measurementtype.study={};
+           """.format(measurementtype, study)
+        res = self.return_query_result(q)
+        if not (len(res) > 0):
+            return (False, "measurementtype not found in study")
+
+        # Check for empty ids in the cnames.
+        # TODO: This should give more information or possibly raise an execption
+        for cname in cnames:
+            if not cname:
+                return False
+
+        # Reject existing study, description and valtype combinations
+        for cid, cname in enumerate(cnames):
+            cur.execute("""
+                        INSERT INTO category (measurementtype, categoryid, categoryname, study)
+                        VALUES (%s, %s, %s, %s);
+                        """,
+                        (measurementtype, cid, cname, study))  # insert the new entry
+        self.dbConnection.commit()
+        return True
+    
+
+    ###########################################################################
+    # Units methods
+    ###########################################################################
+    def unitp(self: object, id: int) -> bool:
+        """
+        Unit existence predicate
+        :param: unit id
+        :return: True if id exists, False if not
+        """
+        q = " SELECT (id) FROM units WHERE units.id={}; ".format(id)
+        res = self.return_query_result(q)
+        return len(res)>0
+
+
+    def add_unit(self: object, study: int, name: str) -> int:
+        """
+        Adds a new unit into the units table. Unit names should be unique
+        within a study. If the name already exists the function returns the id;
+        otherwise it will create a new entry and return the id.
+        :param study: the study id
+        :param name: the name of the unit
+        :return: (unit added, unit id)
+        """
+        cur = self.dbConnection.cursor()
+        q = " SELECT (id) FROM units WHERE units.study={} AND units.name='{}';  ".format(study, name)
+        res = self.return_query_result(q)
+        
+        unit_already_exists = len(res) > 0
+        if unit_already_exists:
+            return False, res[0][0]
+        
+        q = " SELECT MAX(id) FROM units; "
+        res = self.return_query_result(q)  # find the biggest id
+        max_id = res[0][0]
+        if max_id is None:
+            free_id = 0
+        else:
+            free_id = max_id + 1  # the next free id
+        cur.execute("""
+                    INSERT INTO units (id, name, study)
+                    VALUES (%s, %s, %s);
+                    """,
+                    (free_id, name, study))  # insert the new entry
+        self.dbConnection.commit()
+        return True, free_id
+
+
+    ###########################################################################
+    # Bounds methods
+    # These should be consolidated into a common function
+    ###########################################################################
+    def add_boundsint(self: object, study: int, measurementtype: int, minval: int, maxval: int) -> tuple:
+        """
+        Add bounds to the boundsint table
+        TODO: the study doesn't really need to be supplied, it can be looked up
+              in the measurementtype table
+        TODO: check that the valtype field in measurementype matches
+        :param study: the study
+        :param measurementtype: the measurement type
+        :param minval: minimum integer value
+        :param maxval: maximum integer value
+        :returns: True | False
+        """
+        if not (self.studyp(study) and
+                self.measurementtypep(study)):
+            return False, "Type 1"
+        if not self.mt_in_studyp(study, measurementtype):
+            return False, "Type 2"
+        if not (check_int(minval) and check_int(maxval) and minval<=maxval):
+            return False, "Type 3"
+        
+        cur = self.dbConnection.cursor()
+        q = """
+            SELECT measurementtype FROM boundsint
+            WHERE boundsint.study={} AND boundsint.measurementtype={};
+            """.format(study, measurementtype)
+        res = self.return_query_result(q)
+        if len(res) > 0:
+            return False, "Type 4"
+        cur.execute("""
+                    INSERT INTO boundsint (measurementtype, minval, maxval, study)
+                    VALUES (%s, %s, %s, %s);
+                    """,
+                    (measurementtype, minval, maxval, study))
+        self.dbConnection.commit()
+        return True
+    
+    def add_boundsreal(self: object, study: int, measurementtype: int, minval: float, maxval: float) -> tuple:
+        """
+        Add bounds to the boundsreal table
+        TODO: the study doesn't really need to be supplied, it can be looked up
+              in the measurementtype table
+        TODO: check that the valtype field in measurementype matches
+        :param study: the study
+        :param measurementtype: the measurement type
+        :param minval: minimum integer value
+        :param maxval: maximum integer value
+        :returns: True | False
+        """
+        if not (self.studyp(study) and
+                self.measurementtypep(study)):
+            return False, "Type 1"
+        if not self.mt_in_studyp(study, measurementtype):
+            return False, "Type 2"
+        if not (check_real(minval) and check_real(maxval) and minval<=maxval):
+            return False, "Type 3"
+        
+        cur = self.dbConnection.cursor()
+        q = """
+            SELECT measurementtype FROM boundsreal
+            WHERE boundsreal.study={} AND boundsreal.measurementtype={};
+            """.format(study, measurementtype)
+        res = self.return_query_result(q)
+        if len(res) > 0:
+            return False, "Type 4"
+        cur.execute("""
+                    INSERT INTO boundsreal (measurementtype, minval, maxval, study)
+                    VALUES (%s, %s, %s, %s);
+                    """,
+                    (measurementtype, minval, maxval, study))
+        self.dbConnection.commit()
+        return True
+    
+    def add_boundsdatetime(self: object, study: int, measurementtype: int, minval: int, maxval: int) -> tuple:
+        """
+        Add bounds to the boundsdatetime table
+        TODO: the study doesn't really need to be supplied, it can be looked up
+              in the measurementtype table
+        TODO: check that the valtype field in measurementype matches
+        :param study: the study
+        :param measurementtype: the measurement type
+        :param minval: minimum integer value
+        :param maxval: maximum integer value
+        :returns: True | False
+        """
+        if not (self.studyp(study) and
+                self.measurementtypep(study)):
+            return False
+        if not self.mt_in_studyp(study, measurementtype):
+            return False
+        if not (check_datetime(minval) and check_datetime(maxval) and minval<=maxval):
+            return False
+        
+        cur = self.dbConnection.cursor()
+        q = """
+            SELECT measurementtype FROM boundsdatetime
+            WHERE boundsdatetime.study={} AND boundsdatetime.measurementtype={};
+            """.format(study, measurementtype)
+        res = self.return_query_result(q)
+        if len(res) > 0:
+            return False
+        cur.execute("""
+                    INSERT INTO boundsdatetime (measurementtype, minval, maxval, study)
+                    VALUES (%s, %s, %s, %s);
+                    """,
+                    (measurementtype, minval, maxval, study))
+        self.dbConnection.commit()
+        return True
