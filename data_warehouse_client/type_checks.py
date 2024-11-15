@@ -152,6 +152,14 @@ def type_check(val: Any, val_type: ValType):
     return well_typed
 
 
+def valtypep(val_type: ValType) -> bool:
+    """
+    Checks that a value type is an allowed number
+    TODO: The range of value type numbers should be externalised for consistency
+    """
+    return (val_type in range(11))
+
+
 def canonicalise_real(value: Value) -> Tuple[bool, Value, str]:
     """
     canonicalise bools and floats
