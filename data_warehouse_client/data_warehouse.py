@@ -472,7 +472,7 @@ class DataWarehouse:
                     INSERT INTO measurementtype (id, description, valtype, units, study)
                     VALUES (%s, %s, %s, %s, %s);
                     """,
-                    (free_id, description, valtype, ('null' if unit!=None else unit), study))  # insert the new entry
+                    (free_id, description, valtype, ("NULL" if not unit else unit), study))  # insert the new entry
         self.dbConnection.commit()
         return True, free_id
 
@@ -823,12 +823,150 @@ class DataWarehouse:
                     VALUES (%s, %s, %s, %s, %s);
                     """,
                     (mt, mg,
-                     ("null" if not name else name),
+                     ("NULL" if not name else name),
                      study,
                      ("false" if not optional else optional)))
         self.dbConnection.commit()
         return True
 
+
+    ###########################################################################
+    # Source methods
+    ###########################################################################
+    def get_sourcetype_by_description(self: object, description: str) -> tuple:
+        """
+        Gets the data warehouse entry for a description of a sourcetype
+        :param description: the description
+        :return: (id, description, version, study)
+        """
+        q = """
+            SELECT (id, description, version, study) FROM sourcetype
+            WHERE sourcetype.description='{}';
+            """.format(description)
+        res = self.return_query_result(q)
+        if len(res)>0:
+            return True, res[0][0]
+        else:
+            return False, res
+
+
+    def get_sourcetypes(self: object, study: int) -> tuple:
+        """
+        Get all sourcetypes in a study
+        :param study_id: the study id
+        :return: list of all the sourcetypes (id and sourcetype description)
+        """
+        q = """
+            SELECT id, description FROM sourcetype
+            WHERE sourcetype.study={};
+            """.format(id)
+        res = self.return_query_result(q)
+        return res
+
+    
+    def sourcetypep(self: object, id: int) -> bool:
+        """
+        Sourcetype existence predicate
+        :param: sourcetype id
+        :return: True if id exists, False if not
+        """
+        q = " SELECT (id) FROM sourcetype WHERE sourcetype.id={}; ".format(id)
+        res = self.return_query_result(q)
+        return len(res)>0
+
+
+    def add_sourcetype(self: object, study: int, description: str, version=None) -> tuple:
+        """
+        Adds a sourcetype
+        :param study: the study that the sourcetype is attached to
+        :param description: description string of the sourcetype
+        :param version: (optional) version description
+        :returns: id of the created entry, None on error (e.g. study does not exist)
+        """
+        # Ensure study id is valid
+        if not self.studyp(study):
+            return None
+        cur = self.dbConnection.cursor()
+        q = " SELECT MAX(id) FROM sourcetype; "
+        res = self.return_query_result(q)  # find the biggest id
+        max_id = res[0][0]
+        if max_id is None:
+            free_id = 0
+        else:
+            free_id = max_id + 1  # the next free id
+        cur.execute("""
+                    INSERT INTO sourcetype (id, study, description, version)
+                    VALUES (%s, %s, %s, %s);
+                    """,
+                    (free_id,
+                     study,
+                     description,
+                     ("NULL" if not version else version)))  # insert the new entry
+        self.dbConnection.commit()
+        return free_id
+    
+
+    def update_sourcetype_version(self: object, id: int, version: str) -> tuple:
+        """
+        Updates a sourcetype version
+        :param id: id of the sourcetype
+        :param version: new version description
+        :returns: id of the created entry, None on error (e.g. sourcetype does not exist)
+        """
+        if not (self.sourcetypep(id)):
+            return None
+        cur = self.dbConnection.cursor()
+        cur.execute("""
+                    UPDATE sourcetype
+                    SET version=%s
+                    WHERE id=%s;
+                    """,
+                    (version, id))
+        self.dbConnection.commit()
+        return id
+
+
+    def add_source(self: object, sourcetype: int, sourceid: str) -> tuple:
+        """
+        Adds a source. This doesn't check for duplicate names.
+        :param sourcetype: the sourcetype id that the source is an instance of
+        :param sourceid: text description of the source (e.g. a serial number)
+        :returns: id of the created entry, None on error (e.g. sourcetype does not exist)
+        """
+        # Find the study connected to the sourcetype
+        q = """
+            SELECT (study) FROM sourcetype
+            WHERE sourcetype.id={};
+            """.format(sourcetype)
+        res = self.return_query_result(q)
+        study = res[0][0]
+        if study is None:
+            return None
+        
+        # Get next free ID
+        q = """
+            SELECT MAX(id) FROM source;
+            """
+        res = self.return_query_result(q)
+        max_id = res[0][0]
+        if max_id is None:
+            free_id = 0
+        else:
+            free_id = max_id + 1  # the next free id
+        
+        # Insert new entry
+        cur = self.dbConnection.cursor()
+        cur.execute("""
+                    INSERT INTO source (id, sourceid, sourcetype, study)
+                    VALUES (%s, %s, %s, %s);
+                    """,
+                    (free_id,
+                     sourceid,
+                     sourcetype,
+                     study))
+        self.dbConnection.commit()
+        return free_id
+    
 
     ###########################################################################
     # Participant methods
