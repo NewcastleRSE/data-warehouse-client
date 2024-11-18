@@ -10,6 +10,9 @@ dw = data_warehouse.DataWarehouse("db-credentials.json", "tutorial")
 
 Most of the examples contain an zero-indexed "Test" entry. This is to maintain consistency with the `data_warehouse_guide.pdf` document. The table addition methods in the data warehouse client start `id` entries at zero.
 
+There are some inconsistencies in maintenance of the study ID to which elements of certain tables are attached. For example both `add_boundsint()` and `add_measurementtype()` take a study `id`, but `boundsint` entries are linked to `measurementtype` entries and it should not be possible for them to refer to different study `id` values. These inconsistencies should be regarded as a bug which will be removed in future.
+
+
 ## Study format
 ### Clinical Evaluation Form "Q321"
 | Measure | Description | Value Type | Categories (if norminal or ordinal) |
@@ -268,4 +271,64 @@ dw_tutorial=# SELECT * FROM category;
 dw_tutorial=# 
 ```
 
-To be continued ...
+### Bounded values
+Integer, floating point (real) and datetime measurements can be bounded, that is, can be specified with a maximum and minimum value which is checked by the data warehouse when data is inserted. Let's create some bounded measurements and add them to the data warehouse.
+
+#### Bounded ints (`valtype` 7)
+Suppose a clinical evaluation form asks a patient "How hard is it to walk without an aid - give a number from 1 (easy) to 6 (impossible)". To create this measurement we first need to create a new `measurementtype` with a `valtype` of 7. We will add this to Study 1.
+```
+>>> dw.add_measurementtype(1, 7, "KCCQ clinical evaluation form, Item 10")
+(True, 14)
+>>> 
+```
+The bounds required bounds are added to the `boundsint` table using the `add_boundsint()` function, which takes the `measurementtype` id (returned from the `add_measurement()` method) as a parameter:
+```
+>>> dw.add_boundsint(1, 14, 1, 6)
+True
+>>> 
+```
+Examining the `boundsint` table in `psql` shows us the added bounds entry
+```
+dw_tutorial=# SELECT * FROM boundsint;
+ measurementtype | minval | maxval | study 
+-----------------+--------+--------+-------
+              14 |      1 |      6 |     1
+(1 row)
+
+dw_tutorial=# 
+```
+#### Bounded reals (`valtype` 8)
+We can do the same thing for bounded floating point numbers. The researchers have decided that the "Stride Length" should be subject to some constraints; no-one should have a stride longer than say 3.5m, and a measurement under 5cm doesn't count as a stride. The "Stride Length" measurement type already exists (with ID 11) so we can immediately add some bounds to the data warehouse. Note that the bounds must be given in the units of the measurement; the DW has no knowledge of the meaning of the units and cannot enforece this, it is up to the DW maintainer / researcher to ensure this.
+```
+>>> dw.add_boundsreal(1, 11, 0.05, 3.5)
+True
+>>> 
+```
+In `psql`:
+```
+dw_tutorial=# SELECT * FROM boundsreal;
+ measurementtype | minval | maxval | study 
+-----------------+--------+--------+-------
+              11 |   0.05 |    3.5 |     1
+(1 row)
+
+dw_tutorial=# 
+```
+### Bounded datetimes (`valtype` 9)
+Lastley the DW allows bounded `datetime` types. Datetimes suppled to the DW client are Python `datetime.datetime` objects. Let's add a constraint on the "Biopsy Date" measurement type (id 7), which we have decided cannot have been carried out before 01/01/2022. We set a maximum date of some conveniently large time in the future in this case.
+```
+import datetime
+>>> dw.add_boundsdatetime(1, 7, datetime.datetime(2022, 1, 1), datetime.datetime(2122, 1, 1))
+True
+>>> 
+```
+In `psql`,
+```
+dw_tutorial=# SELECT * FROM boundsdatetime;
+ measurementtype | study |       minval        |       maxval        
+-----------------+-------+---------------------+---------------------
+               7 |     1 | 2022-01-01 00:00:00 | 2122-01-01 00:00:00
+(1 row)
+
+dw_tutorial=# 
+```
