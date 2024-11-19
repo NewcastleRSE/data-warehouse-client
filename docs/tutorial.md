@@ -314,7 +314,7 @@ dw_tutorial=# SELECT * FROM boundsreal;
 
 dw_tutorial=# 
 ```
-### Bounded datetimes (`valtype` 9)
+#### Bounded datetimes (`valtype` 9)
 Lastley the DW allows bounded `datetime` types. Datetimes suppled to the DW client are Python `datetime.datetime` objects. Let's add a constraint on the "Biopsy Date" measurement type (id 7), which we have decided cannot have been carried out before 01/01/2022. We set a maximum date of some conveniently large time in the future in this case.
 ```
 import datetime
@@ -332,3 +332,156 @@ dw_tutorial=# SELECT * FROM boundsdatetime;
 
 dw_tutorial=# 
 ```
+
+### Connecting `measurementgroup`s to `measurementtype`s
+So far we have defined a set of *measurement groups* and a set of *measurement types*, but they are currently not linked. Measurement groups exist to collect measurement types together, i.e. a `measurementgroup` has `measurementtype` members. The `connect_mt_to_mg()` method establishes a connection between a measurement type and a measurement group. Note that this table describes a many-to-many relationship, and `measurementtype`s can be members of multiple `measurementgroup`s.
+```
+>>> dw.connect_mt_to_mg(1, 1, 1, "G1")
+True
+>>> dw.connect_mt_to_mg(1, 2, 1, "G3")
+True
+>>> dw.connect_mt_to_mg(1, 3, 1, "G5")
+True
+>>> dw.connect_mt_to_mg(1, 4, 1, "GC1")
+True
+>>> dw.connect_mt_to_mg(1, 5, 1, "C5")
+True
+>>> dw.connect_mt_to_mg(1, 6, 1, "C5.1")
+True
+>>> dw.connect_mt_to_mg(1, 7, 1, "X1")
+True
+>>> dw.connect_mt_to_mg(1, 8, 1, "C14.5")
+True
+>>> dw.connect_mt_to_mg(1, 9, 2, "WB1")
+True
+>>> dw.connect_mt_to_mg(1, 10, 2, "WB2")
+True
+>>> dw.connect_mt_to_mg(1, 11, 2, "WB3")
+True
+>>> dw.connect_mt_to_mg(1, 12, 2, "WB4")
+True
+>>> dw.connect_mt_to_mg(1, 13, 3, "TS1")
+True
+>>> dw.connect_mt_to_mg(1, 14, 1, "C14.10")
+True
+>>> dw.get_all_measurement_groups(1)
+[(1, 'Q321'), (2, 'GFIT'), (3, 'Unilever Temperature Sensor')]
+>>> dw.get_all_measurement_groups_and_types_in_a_study(1)
+[(1, 1, 'G1'), (1, 2, 'G3'), (1, 3, 'G5'), (1, 4, 'GC1'), (1, 5, 'C5'), (1, 6, 'C5.1'), (1, 7, 'X1'), (1, 8, 'C14.5'), (1, 14, 'C14.10'), (2, 9, 'WB1'), (2, 10, 'WB2'), (2, 11, 'WB3'), (2, 12, 'WB4'), (3, 13, 'TS1')]
+>>> 
+```
+In `psql`:
+```
+dw_tutorial=# SELECT * FROM measurementtypetogroup;
+ measurementtype | measurementgroup |  name  | study | optional 
+-----------------+------------------+--------+-------+----------
+               1 |                1 | G1     |     1 | f
+               2 |                1 | G3     |     1 | f
+               3 |                1 | G5     |     1 | f
+               4 |                1 | GC1    |     1 | f
+               5 |                1 | C5     |     1 | f
+               6 |                1 | C5.1   |     1 | f
+               7 |                1 | X1     |     1 | f
+               8 |                1 | C14.5  |     1 | f
+               9 |                2 | WB1    |     1 | f
+              10 |                2 | WB2    |     1 | f
+              11 |                2 | WB3    |     1 | f
+              12 |                2 | WB4    |     1 | f
+              13 |                3 | TS1    |     1 | f
+              14 |                1 | C14.10 |     1 | f
+(14 rows)
+
+dw_tutorial=# 
+```
+
+### Sources and source types
+All data added to the data warehouse comes from a `source`, e.g. a clinical evaluation form, algorithm or sensor. The data warehouse holds this information in two tables: `sourcetype`, which identifies generic information about a source; and `source`, which identifies specific sources (e.g. through unique identifiers). `source` entries are instances of `sourcetype`s, therefore `sourcetype`s should be created in the data warehouse first.
+
+`sourcetype` entries can have an optional "version" label.
+```
+>>> dw.add_sourcetype(1, "Test Type")
+0
+>>> dw.add_sourcetype(1, "q321", 1)
+1
+>>> dw.add_sourcetype(1, "GFIT", 27)
+2
+>>> dw.add_sourcetype(1, "Unilever Temperature Sensor", 12)
+3
+>>> dw.get_sourcetypes(1)
+[(0, 'Test Type'), (1, 'q321'), (2, 'GFIT'), (3, 'Unilever Temperature Sensor')]
+>>> 
+```
+in `psql`:
+```
+dw_tutorial=# SELECT * FROM sourcetype;
+ id |         description         | version | study 
+----+-----------------------------+---------+-------
+  0 | Test Type                   | NULL    |     1
+  1 | q321                        | 1       |     1
+  2 | GFIT                        | 27      |     1
+  3 | Unilever Temperature Sensor | 12      |     1
+(4 rows)
+
+dw_tutorial=# 
+```
+Adding sources:
+```
+>>> dw.add_source(1, "Test")
+0
+>>> dw.add_source(1, 1)
+1
+>>> dw.add_source(2, 1)
+2
+>>> dw.add_source(3, 3267)
+3
+>>> 
+```
+`psql` (there's no Python funcion for querying the source table yet):
+```
+dw_tutorial=# SELECT * FROM source;
+ id | sourceid | sourcetype | study 
+----+----------+------------+-------
+  0 | Test     |          1 |     1
+  1 | 1        |          1 |     1
+  2 | 1        |          2 |     1
+  3 | 3267     |          3 |     1
+(4 rows)
+
+dw_tutorial=# 
+```
+
+### Adding participants
+Measurements in a study can be, although don't have to be, associated with a *Participant*. Participants are added to the data warehouse with an `add_participant()` method. The `get_participants()` method returns a list of all of the participants attached to a study.
+```
+>>> dw.add_participant(1, "P123456")
+0
+>>> dw.get_participants(1)
+[(0, 'P123456')]
+>>> 
+```
+
+### Adding measurements
+All of the previous sections have been required to prepare the appropriate groups and structures relevant to the data gathering process. It is important to consider the structure of the studies and trials, and the nature and origin of measurements, before adding any actual measurements to the data warehouse. With a correctly-defined data warehouse structure, data can be validated as it enters the data warehouse, and queries and analysis of data can be carried out efficiently.
+
+In the tutorial example, we've collected the data in the following table.
+
+| time | measurement group | group instance | measurement type | participant | study | trial | source | valtype | val (int) | val (real) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 08/03/2020 14:05 | 1 | 1 | 1 | 1 | 1 | | 1 | 4 | 1 | |
+| 08/03/2020 14:05 | 1 | 1 | 2 | 1 | 1 | | 1 | 3 | | |
+| 08/03/2020 14:05 | 1 | 1 | 3 | 1 | 1 | | 1 | 5 | 2 | |
+| 08/03/2020 14:05 | 1 | 1 | 4 | 1 | 1 | | 1 | 4 | 0 | |
+| 08/03/2020 14:05 | 1 | 1 | 5 | 1 | 1 | | 1 | 2 | | |
+| 08/03/2020 14:05 | 1 | 1 | 6 | 1 | 1 | | 1 | 1 | | 2.50 |
+| 08/03/2020 14:05 | 1 | 1 | 7 | 1 | 1 | | 1 | 3 | | |
+| 08/03/2020 14:05 | 1 | 1 | 8 | 1 | 1 | | 1 | 6 | 3 | |
+| 08/03/2020 14:05 | 1 | 1 | 14 | 1 | 1 | | 1 | 7 | 2 | |
+| | | | | | | | | | | |
+| 11/05/2020 11:03 | 2 | 9 | 9 | 1 | 1 | | 2 | 1 | | 4.30 |
+| 11/05/2020 11:03 | 2 | 9 | 10 | 1 | 1 | | 2 | 1 | | 1.03 |
+| 11/05/2020 11:03 | 2 | 9 | 11 | 1 | 1 | | 2 | 1 | | 22.00 |
+| 11/05/2020 11:03 | 2 | 9 | 12 | 1 | 1 | | 2 | 1 | | 5.30 |
+| | | | | | | | | | | |
+| 11/05/2020 11:03 | 3 | 13 | 13 | 1 | 1 | | 3 | 1 | | 37.50 |
+| 11/05/2020 11:03 | 3 | 13 | 13 | 1 | 1 | | 3 | 1 | | 36.40 |
+| 11/05/2020 11:03 | 3 | 13 | 13 | 1 | 1 | | 3 | 1 | | 35.80 |
