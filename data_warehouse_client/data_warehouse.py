@@ -859,7 +859,7 @@ class DataWarehouse:
         q = """
             SELECT id, description FROM sourcetype
             WHERE sourcetype.study={};
-            """.format(id)
+            """.format(study)
         res = self.return_query_result(q)
         return res
 
