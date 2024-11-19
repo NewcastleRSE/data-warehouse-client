@@ -453,10 +453,12 @@ dw_tutorial=#
 ### Adding participants
 Measurements in a study can be, although don't have to be, associated with a *Participant*. Participants are added to the data warehouse with an `add_participant()` method. The `get_participants()` method returns a list of all of the participants attached to a study.
 ```
->>> dw.add_participant(1, "P123456")
+>>> dw.add_participant(1, "Test User")
 0
+>>> dw.add_participant(1, "P123456")
+1
 >>> dw.get_participants(1)
-[(0, 'P123456')]
+[(0, 'Test User'), (1, 'P123456')]
 >>> 
 ```
 
@@ -482,6 +484,86 @@ In the tutorial example, we've collected the data in the following table.
 | 11/05/2020 11:03 | 2 | 9 | 11 | 1 | 1 | | 2 | 1 | | 22.00 |
 | 11/05/2020 11:03 | 2 | 9 | 12 | 1 | 1 | | 2 | 1 | | 5.30 |
 | | | | | | | | | | | |
-| 11/05/2020 11:03 | 3 | 13 | 13 | 1 | 1 | | 3 | 1 | | 37.50 |
-| 11/05/2020 11:03 | 3 | 13 | 13 | 1 | 1 | | 3 | 1 | | 36.40 |
-| 11/05/2020 11:03 | 3 | 13 | 13 | 1 | 1 | | 3 | 1 | | 35.80 |
+| 16/06/2020 01:02 | 3 | 13 | 13 | 1 | 1 | | 3 | 1 | | 37.50 |
+| 11/05/2020 13:03 | 3 | 13 | 13 | 1 | 1 | | 3 | 1 | | 36.40 |
+| 11/05/2020 17:05 | 3 | 13 | 13 | 1 | 1 | | 3 | 1 | | 35.80 |
+
+```
+>>> values_1 = [(1, 4, 1), (2, 3, "1962-07-24"), (3, 5, 2), (4, 4, 0), (5, 2, "Parabe\
+nnylzo Phetatine"), (6, 1, 2.50), (7, 3, "2012-09-07 06:10:00"), (8, 6, 3), (14, 7, 2\
+)]
+>>> values_2 = [(9, 1, 4.30), (10, 1, 1.03), (11, 1, 22.00), (12, 1, 5.30)]
+>>> values_3a = [(13, 1, 37.50)]
+>>> values_3b = [(13, 1, 36.40)]
+>>> values_3c = [(13, 1, 35.80)]
+>>> time_1 = "2020-03-08 14:05"
+>>> time_2 = "2020-03-11 11:03"
+>>> time_3a = "2020-06-16 01:02"
+>>> time_3b = "2020-05-11 13:03"
+>>> time_3c = "2020-05-11 17:05"
+>>> dw.insert_measurement_group(1, 1, values_1, time_1, None, 1, 1, None)
+(True, 2, '')
+>>> dw.insert_measurement_group(1, 2, values_2, time_2, None, None, 2, None)
+(True, 11, '')
+>>> dw.insert_measurement_group(1, 3, values_3a, time_3a, None, None, 3, None)
+(True, 15, '')
+>>> dw.insert_measurement_group(1, 3, values_3b, time_3b, None, None, 3, None)
+(True, 16, '')
+>>> dw.insert_measurement_group(1, 3, values_3c, time_3c, None, None, 3, None)
+(True, 17, '')
+>>> 
+```
+This all looks like this in the data warehouse:
+```
+dw_tutorial=# SELECT * FROM measurement;
+ id | groupinstance | measurementtype | participant | study | source | valtype | valinteger | valreal |        time         | measurementgroup | trial 
+----+---------------+-----------------+-------------+-------+--------+---------+------------+---------+---------------------+------------------+-------
+  2 |             2 |               1 |           1 |     1 |      1 |       4 |          1 |         | 2020-03-08 14:05:00 |                1 |      
+  3 |             2 |               2 |           1 |     1 |      1 |       3 |            |         | 2020-03-08 14:05:00 |                1 |      
+  4 |             2 |               3 |           1 |     1 |      1 |       5 |          2 |         | 2020-03-08 14:05:00 |                1 |      
+  5 |             2 |               4 |           1 |     1 |      1 |       4 |          0 |         | 2020-03-08 14:05:00 |                1 |      
+  6 |             2 |               5 |           1 |     1 |      1 |       2 |            |         | 2020-03-08 14:05:00 |                1 |      
+  7 |             2 |               6 |           1 |     1 |      1 |       1 |            |     2.5 | 2020-03-08 14:05:00 |                1 |      
+  8 |             2 |               7 |           1 |     1 |      1 |       3 |            |         | 2020-03-08 14:05:00 |                1 |      
+  9 |             2 |               8 |           1 |     1 |      1 |       6 |          3 |         | 2020-03-08 14:05:00 |                1 |      
+ 10 |             2 |              14 |           1 |     1 |      1 |       7 |          2 |         | 2020-03-08 14:05:00 |                1 |      
+ 11 |            11 |               9 |             |     1 |      2 |       1 |            |     4.3 | 2020-03-11 11:03:00 |                2 |      
+ 12 |            11 |              10 |             |     1 |      2 |       1 |            |    1.03 | 2020-03-11 11:03:00 |                2 |      
+ 13 |            11 |              11 |             |     1 |      2 |       1 |            |      22 | 2020-03-11 11:03:00 |                2 |      
+ 14 |            11 |              12 |             |     1 |      2 |       1 |            |     5.3 | 2020-03-11 11:03:00 |                2 |      
+ 15 |            15 |              13 |             |     1 |      3 |       1 |            |    37.5 | 2020-06-16 01:02:00 |                3 |      
+ 16 |            16 |              13 |             |     1 |      3 |       1 |            |    36.4 | 2020-05-11 13:03:00 |                3 |      
+ 17 |            17 |              13 |             |     1 |      3 |       1 |            |    35.8 | 2020-05-11 17:05:00 |                3 |      
+(16 rows)
+
+dw_tutorial=# SELECT * FROM datetimevalue;
+ measurement |     datetimeval     | study 
+-------------+---------------------+-------
+           3 | 1962-07-24 00:00:00 |     1
+           8 | 2012-09-07 06:10:00 |     1
+(2 rows)
+
+dw_tutorial=# SELECT * FROM boundsint;
+ measurementtype | minval | maxval | study 
+-----------------+--------+--------+-------
+              14 |      1 |      6 |     1
+(1 row)
+
+dw_tutorial=# SELECT * FROM textvalue ;
+ measurement |        textval         | study 
+-------------+------------------------+-------
+           6 | Parabennylzo Phetatine |     1
+(1 row)
+
+dw_tutorial=# 
+```
+
+Note that none of the measurements have a `trial` field. Table 15 in `data_warehouse_guide.pdf` summarises how the `trial` and `participant` fields interact:
+| trial | participant | scope of the measurement |
+| Null | Null | the whole of the study |
+| Null | Not Null | the specified participant in all trials within the study |
+| Not Null | Null | all participants in the trial |
+| Not Null | Not Null | the specified participant in the specified trial |
+
+## Beyond the tutorial
+The data warehouse Python client library offers more funcitonality for extracting, grouping, filtering and analysing measurements. This funcitonality is documented in `data_warehouse_client.pdf` and within the client code itself.
