@@ -15,16 +15,17 @@
 --     Dumped by pg_dump version 15.2
 --     Started on 2023-03-28 14:53:03
 
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
+ALTER DATABASE :DBNAME SET statement_timeout = 0;
+ALTER DATABASE :DBNAME SET lock_timeout = 0;
+ALTER DATABASE :DBNAME SET idle_in_transaction_session_timeout = 0;
+ALTER DATABASE :DBNAME SET client_encoding = 'UTF8';
+ALTER DATABASE :DBNAME SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
+ALTER DATABASE :DBNAME SET check_function_bodies = false;
+ALTER DATABASE :DBNAME SET xmloption = content;
+ALTER DATABASE :DBNAME SET client_min_messages = warning;
+ALTER DATABASE :DBNAME SET row_security = off;
+ALTER DATABASE :DBNAME SET datestyle = ISO, DMY;
 
 --
 -- Create users
