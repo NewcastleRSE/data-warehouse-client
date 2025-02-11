@@ -1105,7 +1105,7 @@ class DataWarehouse:
         """
         q = " SELECT id FROM study WHERE study.studyid ='{}'; ".format(local_study_id)
         res = self.return_query_result(q)
-        return (len(res) > 0), tuple(res)
+        return (len(res) > 0), tuple(res[0])
 
 
     def add_study(self: object, local_study_id: str) -> int:

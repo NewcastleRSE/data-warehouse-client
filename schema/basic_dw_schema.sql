@@ -15,26 +15,33 @@
 --     Dumped by pg_dump version 15.2
 --     Started on 2023-03-28 14:53:03
 
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
+ALTER DATABASE :DBNAME SET statement_timeout = 0;
+ALTER DATABASE :DBNAME SET lock_timeout = 0;
+ALTER DATABASE :DBNAME SET idle_in_transaction_session_timeout = 0;
+ALTER DATABASE :DBNAME SET client_encoding = 'UTF8';
+ALTER DATABASE :DBNAME SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
+ALTER DATABASE :DBNAME SET check_function_bodies = false;
+ALTER DATABASE :DBNAME SET xmloption = content;
+ALTER DATABASE :DBNAME SET client_min_messages = warning;
+ALTER DATABASE :DBNAME SET row_security = off;
+ALTER DATABASE :DBNAME SET datestyle = ISO, DMY;
 
 --
--- Create users
+-- Create roles
+-- The roles should be created in a separate script customised to the
+-- PostgreSQL installation particulars
 --
 
-CREATE ROLE dw;
-CREATE ROLE "data_warehouse_read_write";
-CREATE ROLE "data_warehouse_read_only";
-ALTER ROLE "data_warehouse_read_write" LOGIN;
-ALTER ROLE "data_warehouse_read_only" LOGIN;
+-- Example:
+--
+-- CREATE ROLE dw;
+-- GRANT dw TO dbadmin;
+-- CREATE ROLE data_warehouse_read_write;
+-- CREATE ROLE data_warehouse_read_only;
+-- CREATE ROLE db_user;
+-- ALTER ROLE db_user LOGIN;
+-- GRANT data_warehouse_read_write TO db_user;
 
 --
 -- TOC entry 6 (class 2615 OID 2200)
@@ -1217,7 +1224,7 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 -- Name: FUNCTION connectby(text, text, text, text, integer); Type: ACL; Schema: public; Owner: rdsadmin
 --
 
-GRANT ALL ON FUNCTION public.connectby(text, text, text, text, integer) TO "data_warehouse_read_write";
+GRANT ALL ON FUNCTION public.connectby(text, text, text, text, integer) TO data_warehouse_read_write;
 
 
 --
@@ -1226,7 +1233,7 @@ GRANT ALL ON FUNCTION public.connectby(text, text, text, text, integer) TO "data
 -- Name: FUNCTION connectby(text, text, text, text, integer, text); Type: ACL; Schema: public; Owner: rdsadmin
 --
 
-GRANT ALL ON FUNCTION public.connectby(text, text, text, text, integer, text) TO "data_warehouse_read_write";
+GRANT ALL ON FUNCTION public.connectby(text, text, text, text, integer, text) TO data_warehouse_read_write;
 
 
 --
@@ -1235,7 +1242,7 @@ GRANT ALL ON FUNCTION public.connectby(text, text, text, text, integer, text) TO
 -- Name: FUNCTION connectby(text, text, text, text, text, integer); Type: ACL; Schema: public; Owner: rdsadmin
 --
 
-GRANT ALL ON FUNCTION public.connectby(text, text, text, text, text, integer) TO "data_warehouse_read_write";
+GRANT ALL ON FUNCTION public.connectby(text, text, text, text, text, integer) TO data_warehouse_read_write;
 
 
 --
@@ -1244,7 +1251,7 @@ GRANT ALL ON FUNCTION public.connectby(text, text, text, text, text, integer) TO
 -- Name: FUNCTION connectby(text, text, text, text, text, integer, text); Type: ACL; Schema: public; Owner: rdsadmin
 --
 
-GRANT ALL ON FUNCTION public.connectby(text, text, text, text, text, integer, text) TO "data_warehouse_read_write";
+GRANT ALL ON FUNCTION public.connectby(text, text, text, text, text, integer, text) TO data_warehouse_read_write;
 
 
 --
@@ -1253,7 +1260,7 @@ GRANT ALL ON FUNCTION public.connectby(text, text, text, text, text, integer, te
 -- Name: FUNCTION crosstab(text); Type: ACL; Schema: public; Owner: rdsadmin
 --
 
-GRANT ALL ON FUNCTION public.crosstab(text) TO "data_warehouse_read_write";
+GRANT ALL ON FUNCTION public.crosstab(text) TO data_warehouse_read_write;
 
 
 --
@@ -1262,7 +1269,7 @@ GRANT ALL ON FUNCTION public.crosstab(text) TO "data_warehouse_read_write";
 -- Name: FUNCTION crosstab(text, integer); Type: ACL; Schema: public; Owner: rdsadmin
 --
 
-GRANT ALL ON FUNCTION public.crosstab(text, integer) TO "data_warehouse_read_write";
+GRANT ALL ON FUNCTION public.crosstab(text, integer) TO data_warehouse_read_write;
 
 
 --
@@ -1271,7 +1278,7 @@ GRANT ALL ON FUNCTION public.crosstab(text, integer) TO "data_warehouse_read_wri
 -- Name: FUNCTION crosstab(text, text); Type: ACL; Schema: public; Owner: rdsadmin
 --
 
-GRANT ALL ON FUNCTION public.crosstab(text, text) TO "data_warehouse_read_write";
+GRANT ALL ON FUNCTION public.crosstab(text, text) TO data_warehouse_read_write;
 
 
 --
@@ -1280,7 +1287,7 @@ GRANT ALL ON FUNCTION public.crosstab(text, text) TO "data_warehouse_read_write"
 -- Name: FUNCTION crosstab2(text); Type: ACL; Schema: public; Owner: rdsadmin
 --
 
-GRANT ALL ON FUNCTION public.crosstab2(text) TO "data_warehouse_read_write";
+GRANT ALL ON FUNCTION public.crosstab2(text) TO data_warehouse_read_write;
 
 
 --
@@ -1289,7 +1296,7 @@ GRANT ALL ON FUNCTION public.crosstab2(text) TO "data_warehouse_read_write";
 -- Name: FUNCTION crosstab3(text); Type: ACL; Schema: public; Owner: rdsadmin
 --
 
-GRANT ALL ON FUNCTION public.crosstab3(text) TO "data_warehouse_read_write";
+GRANT ALL ON FUNCTION public.crosstab3(text) TO data_warehouse_read_write;
 
 
 --
@@ -1298,7 +1305,7 @@ GRANT ALL ON FUNCTION public.crosstab3(text) TO "data_warehouse_read_write";
 -- Name: FUNCTION crosstab4(text); Type: ACL; Schema: public; Owner: rdsadmin
 --
 
-GRANT ALL ON FUNCTION public.crosstab4(text) TO "data_warehouse_read_write";
+GRANT ALL ON FUNCTION public.crosstab4(text) TO data_warehouse_read_write;
 
 
 --
@@ -1307,7 +1314,7 @@ GRANT ALL ON FUNCTION public.crosstab4(text) TO "data_warehouse_read_write";
 -- Name: FUNCTION normal_rand(integer, double precision, double precision); Type: ACL; Schema: public; Owner: rdsadmin
 --
 
-GRANT ALL ON FUNCTION public.normal_rand(integer, double precision, double precision) TO "data_warehouse_read_write";
+GRANT ALL ON FUNCTION public.normal_rand(integer, double precision, double precision) TO data_warehouse_read_write;
 
 
 --
@@ -1316,8 +1323,8 @@ GRANT ALL ON FUNCTION public.normal_rand(integer, double precision, double preci
 -- Name: TABLE measurementgroup; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.measurementgroup TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.measurementgroup TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.measurementgroup TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.measurementgroup TO data_warehouse_read_only;
 
 
 --
@@ -1326,8 +1333,8 @@ GRANT SELECT ON TABLE public.measurementgroup TO "data_warehouse_read_only";
 -- Name: SEQUENCE "MeasurementGroup_Id_seq"; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON SEQUENCE public."MeasurementGroup_Id_seq" TO "data_warehouse_read_write";
-GRANT SELECT ON SEQUENCE public."MeasurementGroup_Id_seq" TO "data_warehouse_read_only";
+GRANT ALL ON SEQUENCE public."MeasurementGroup_Id_seq" TO data_warehouse_read_write;
+GRANT SELECT ON SEQUENCE public."MeasurementGroup_Id_seq" TO data_warehouse_read_only;
 
 
 --
@@ -1336,8 +1343,8 @@ GRANT SELECT ON SEQUENCE public."MeasurementGroup_Id_seq" TO "data_warehouse_rea
 -- Name: TABLE measurementtype; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.measurementtype TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.measurementtype TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.measurementtype TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.measurementtype TO data_warehouse_read_only;
 
 
 --
@@ -1346,8 +1353,8 @@ GRANT SELECT ON TABLE public.measurementtype TO "data_warehouse_read_only";
 -- Name: SEQUENCE "MeasurementType_Id_seq"; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON SEQUENCE public."MeasurementType_Id_seq" TO "data_warehouse_read_write";
-GRANT SELECT ON SEQUENCE public."MeasurementType_Id_seq" TO "data_warehouse_read_only";
+GRANT ALL ON SEQUENCE public."MeasurementType_Id_seq" TO data_warehouse_read_write;
+GRANT SELECT ON SEQUENCE public."MeasurementType_Id_seq" TO data_warehouse_read_only;
 
 
 --
@@ -1356,8 +1363,8 @@ GRANT SELECT ON SEQUENCE public."MeasurementType_Id_seq" TO "data_warehouse_read
 -- Name: TABLE measurement; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.measurement TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.measurement TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.measurement TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.measurement TO data_warehouse_read_only;
 
 
 --
@@ -1366,8 +1373,8 @@ GRANT SELECT ON TABLE public.measurement TO "data_warehouse_read_only";
 -- Name: SEQUENCE "Measurement_Id_seq"; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON SEQUENCE public."Measurement_Id_seq" TO "data_warehouse_read_write";
-GRANT SELECT ON SEQUENCE public."Measurement_Id_seq" TO "data_warehouse_read_only";
+GRANT ALL ON SEQUENCE public."Measurement_Id_seq" TO data_warehouse_read_write;
+GRANT SELECT ON SEQUENCE public."Measurement_Id_seq" TO data_warehouse_read_only;
 
 
 --
@@ -1376,8 +1383,8 @@ GRANT SELECT ON SEQUENCE public."Measurement_Id_seq" TO "data_warehouse_read_onl
 -- Name: TABLE participant; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.participant TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.participant TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.participant TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.participant TO data_warehouse_read_only;
 
 
 --
@@ -1386,8 +1393,8 @@ GRANT SELECT ON TABLE public.participant TO "data_warehouse_read_only";
 -- Name: SEQUENCE "Participant_Id_seq"; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON SEQUENCE public."Participant_Id_seq" TO "data_warehouse_read_write";
-GRANT SELECT ON SEQUENCE public."Participant_Id_seq" TO "data_warehouse_read_only";
+GRANT ALL ON SEQUENCE public."Participant_Id_seq" TO data_warehouse_read_write;
+GRANT SELECT ON SEQUENCE public."Participant_Id_seq" TO data_warehouse_read_only;
 
 
 --
@@ -1396,8 +1403,8 @@ GRANT SELECT ON SEQUENCE public."Participant_Id_seq" TO "data_warehouse_read_onl
 -- Name: TABLE sourcetype; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.sourcetype TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.sourcetype TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.sourcetype TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.sourcetype TO data_warehouse_read_only;
 
 
 --
@@ -1406,8 +1413,8 @@ GRANT SELECT ON TABLE public.sourcetype TO "data_warehouse_read_only";
 -- Name: SEQUENCE "SourceType_Id_seq"; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON SEQUENCE public."SourceType_Id_seq" TO "data_warehouse_read_write";
-GRANT SELECT ON SEQUENCE public."SourceType_Id_seq" TO "data_warehouse_read_only";
+GRANT ALL ON SEQUENCE public."SourceType_Id_seq" TO data_warehouse_read_write;
+GRANT SELECT ON SEQUENCE public."SourceType_Id_seq" TO data_warehouse_read_only;
 
 
 --
@@ -1416,8 +1423,8 @@ GRANT SELECT ON SEQUENCE public."SourceType_Id_seq" TO "data_warehouse_read_only
 -- Name: TABLE source; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.source TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.source TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.source TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.source TO data_warehouse_read_only;
 
 
 --
@@ -1426,8 +1433,8 @@ GRANT SELECT ON TABLE public.source TO "data_warehouse_read_only";
 -- Name: SEQUENCE "Source_Id_seq"; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON SEQUENCE public."Source_Id_seq" TO "data_warehouse_read_write";
-GRANT SELECT ON SEQUENCE public."Source_Id_seq" TO "data_warehouse_read_only";
+GRANT ALL ON SEQUENCE public."Source_Id_seq" TO data_warehouse_read_write;
+GRANT SELECT ON SEQUENCE public."Source_Id_seq" TO data_warehouse_read_only;
 
 
 --
@@ -1436,8 +1443,8 @@ GRANT SELECT ON SEQUENCE public."Source_Id_seq" TO "data_warehouse_read_only";
 -- Name: TABLE study; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.study TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.study TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.study TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.study TO data_warehouse_read_only;
 
 
 --
@@ -1446,8 +1453,8 @@ GRANT SELECT ON TABLE public.study TO "data_warehouse_read_only";
 -- Name: SEQUENCE "Study_Id_seq"; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON SEQUENCE public."Study_Id_seq" TO "data_warehouse_read_write";
-GRANT SELECT ON SEQUENCE public."Study_Id_seq" TO "data_warehouse_read_only";
+GRANT ALL ON SEQUENCE public."Study_Id_seq" TO data_warehouse_read_write;
+GRANT SELECT ON SEQUENCE public."Study_Id_seq" TO data_warehouse_read_only;
 
 
 --
@@ -1456,8 +1463,8 @@ GRANT SELECT ON SEQUENCE public."Study_Id_seq" TO "data_warehouse_read_only";
 -- Name: TABLE boundsdatetime; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.boundsdatetime TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.boundsdatetime TO "data_warehouse_read_only";
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.boundsdatetime TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.boundsdatetime TO data_warehouse_read_only;
 
 
 --
@@ -1466,8 +1473,8 @@ GRANT SELECT ON TABLE public.boundsdatetime TO "data_warehouse_read_only";
 -- Name: TABLE boundsint; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.boundsint TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.boundsint TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.boundsint TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.boundsint TO data_warehouse_read_only;
 
 
 --
@@ -1476,8 +1483,8 @@ GRANT SELECT ON TABLE public.boundsint TO "data_warehouse_read_only";
 -- Name: TABLE boundsreal; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.boundsreal TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.boundsreal TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.boundsreal TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.boundsreal TO data_warehouse_read_only;
 
 
 --
@@ -1486,8 +1493,8 @@ GRANT SELECT ON TABLE public.boundsreal TO "data_warehouse_read_only";
 -- Name: TABLE category; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.category TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.category TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.category TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.category TO data_warehouse_read_only;
 
 
 --
@@ -1496,8 +1503,8 @@ GRANT SELECT ON TABLE public.category TO "data_warehouse_read_only";
 -- Name: TABLE datetimevalue; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.datetimevalue TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.datetimevalue TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.datetimevalue TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.datetimevalue TO data_warehouse_read_only;
 
 
 --
@@ -1506,8 +1513,8 @@ GRANT SELECT ON TABLE public.datetimevalue TO "data_warehouse_read_only";
 -- Name: TABLE measurementtypetogroup; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.measurementtypetogroup TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.measurementtypetogroup TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.measurementtypetogroup TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.measurementtypetogroup TO data_warehouse_read_only;
 
 
 --
@@ -1516,8 +1523,8 @@ GRANT SELECT ON TABLE public.measurementtypetogroup TO "data_warehouse_read_only
 -- Name: TABLE textvalue; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.textvalue TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.textvalue TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.textvalue TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.textvalue TO data_warehouse_read_only;
 
 
 --
@@ -1526,8 +1533,8 @@ GRANT SELECT ON TABLE public.textvalue TO "data_warehouse_read_only";
 -- Name: TABLE trial; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.trial TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.trial TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.trial TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.trial TO data_warehouse_read_only;
 
 
 --
@@ -1536,8 +1543,8 @@ GRANT SELECT ON TABLE public.trial TO "data_warehouse_read_only";
 -- Name: TABLE units; Type: ACL; Schema: public; Owner: dw
 --
 
-GRANT ALL ON TABLE public.units TO "data_warehouse_read_write";
-GRANT SELECT ON TABLE public.units TO "data_warehouse_read_only";
+GRANT ALL ON TABLE public.units TO data_warehouse_read_write;
+GRANT SELECT ON TABLE public.units TO data_warehouse_read_only;
 
 
 --
@@ -1545,10 +1552,10 @@ GRANT SELECT ON TABLE public.units TO "data_warehouse_read_only";
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: -; Owner: dw
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE dw GRANT SELECT,INSERT,DELETE,UPDATE ON TABLES  TO "data_warehouse_read_write";
-ALTER DEFAULT PRIVILEGES FOR ROLE dw GRANT SELECT,UPDATE ON SEQUENCES  TO "data_warehouse_read_write";
-ALTER DEFAULT PRIVILEGES FOR ROLE dw GRANT SELECT ON TABLES  TO "data_warehouse_read_only";
-ALTER DEFAULT PRIVILEGES FOR ROLE dw GRANT SELECT ON SEQUENCES  TO "data_warehouse_read_only";
+ALTER DEFAULT PRIVILEGES FOR ROLE dw GRANT SELECT,INSERT,DELETE,UPDATE ON TABLES  TO data_warehouse_read_write;
+ALTER DEFAULT PRIVILEGES FOR ROLE dw GRANT SELECT,UPDATE ON SEQUENCES  TO data_warehouse_read_write;
+ALTER DEFAULT PRIVILEGES FOR ROLE dw GRANT SELECT ON TABLES  TO data_warehouse_read_only;
+ALTER DEFAULT PRIVILEGES FOR ROLE dw GRANT SELECT ON SEQUENCES  TO data_warehouse_read_only;
 
 
 -- Completed on 2023-03-28 14:53:06
