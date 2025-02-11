@@ -28,16 +28,20 @@ ALTER DATABASE :DBNAME SET row_security = off;
 ALTER DATABASE :DBNAME SET datestyle = ISO, DMY;
 
 --
--- Create users
+-- Create roles
+-- The roles should be created in a separate script customised to the
+-- PostgreSQL installation particulars
 --
 
-CREATE ROLE dw;
-CREATE ROLE data_warehouse_read_write;
-CREATE ROLE data_warehouse_read_only;
--- CREATE ROLE nifi_user;
--- ALTER ROLE nifi_user LOGIN;
--- GRANT dw TO pgadmin;
--- GRANT data_warehouse_read_write TO nifi_user;
+-- Example:
+--
+-- CREATE ROLE dw;
+-- GRANT dw TO dbadmin;
+-- CREATE ROLE data_warehouse_read_write;
+-- CREATE ROLE data_warehouse_read_only;
+-- CREATE ROLE db_user;
+-- ALTER ROLE db_user LOGIN;
+-- GRANT data_warehouse_read_write TO db_user;
 
 --
 -- TOC entry 6 (class 2615 OID 2200)
