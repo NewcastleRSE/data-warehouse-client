@@ -926,6 +926,23 @@ class DataWarehouse:
         return id
 
 
+    def get_source_by_description(self: object, description: str) -> tuple:
+        """
+        Gets a source entry corresponding to a description of a source
+        :param description: the description
+        :return: (id, description, sourcetype, study)
+        """
+        q = """
+            SELECT id, sourceid, sourcetype, study FROM source
+            WHERE source.sourceid='{}';
+            """.format(description)
+        res = self.return_query_result(q)
+        if len(res)>0:
+            return True, res[0][0]
+        else:
+            return False, res
+        
+
     def add_source(self: object, sourcetype: int, sourceid: str) -> tuple:
         """
         Adds a source. This doesn't check for duplicate names.
