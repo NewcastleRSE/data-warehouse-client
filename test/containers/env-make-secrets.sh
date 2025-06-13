@@ -11,8 +11,8 @@ source env-common.sh
 # Fields to create secrets for. Change "1" to "0" to prevent.
 ###############################################################################
 declare -A sect_fields=(
-    ["POSTGRESQL_PASSWORD"]="1"
-    ["POSTGRESQL_SUPERUSER_PASSWORD"]="1"
+    ["POSTGRES_PASSWORD"]="1"
+    ["POSTGRES_SUPERUSER_PASSWORD"]="1"
 )
 
 ###############################################################################
