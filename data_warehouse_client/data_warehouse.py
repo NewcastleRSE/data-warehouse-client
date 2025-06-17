@@ -362,7 +362,7 @@ class DataWarehouse:
     ###########################################################################
     # Measurement Type methods
     ###########################################################################
-    def measurementtypep(self: object, id: int) -> bool:
+    def measurementtypep(self, id: int) -> bool:
         """
         measurementtype existence predicate
         :param: measurementtype id
@@ -411,7 +411,7 @@ class DataWarehouse:
         return self.return_query_result(query)
 
 
-    def mt_in_studyp(self: object, study: int, measurementtype: int):
+    def mt_in_studyp(self, study: int, measurementtype: int):
         """
         Is measurement type in a study?
         :param measurementtype: measurementtype id
@@ -430,7 +430,7 @@ class DataWarehouse:
             return False
 
 
-    def add_measurementtype(self: object, study: int, valtype: int, description: str, unit=None) -> int:
+    def add_measurementtype(self, study: int, valtype: int, description: str, unit=None) -> int:
         """
         Adds a new measurementtype. A combination of the descriptive names and
         the value type should be unique within a study. If the combination
@@ -729,7 +729,7 @@ class DataWarehouse:
         return res
     
     
-    def mg_in_studyp(self: object, study: int, measurementgroup: int):
+    def mg_in_studyp(self, study: int, measurementgroup: int):
         """
         Is a measurement group in a study?
         :param study: study id
@@ -773,7 +773,7 @@ class DataWarehouse:
         return result
     
 
-    def add_measurementgroup(self: object, study: int, description: str) -> tuple:
+    def add_measurementgroup(self, study: int, description: str) -> tuple:
         """
         Adds a new measurementgroup. Group names should be unique within a
         study. If the name already exists the function returns the id;
@@ -808,7 +808,7 @@ class DataWarehouse:
         return True, free_id
     
         
-    def connect_mt_to_mg(self: object, study: int, mt: int, mg: int, name=None, optional=False) -> tuple:
+    def connect_mt_to_mg(self, study: int, mt: int, mg: int, name=None, optional=False) -> tuple:
         """
         """
         # Check that type and group exists in study
@@ -833,7 +833,7 @@ class DataWarehouse:
     ###########################################################################
     # Source methods
     ###########################################################################
-    def get_sourcetype_by_description(self: object, description: str) -> tuple:
+    def get_sourcetype_by_description(self, description: str) -> tuple:
         """
         Gets the data warehouse entry for a description of a sourcetype
         :param description: the description
@@ -850,7 +850,7 @@ class DataWarehouse:
             return False, res
 
 
-    def get_sourcetypes(self: object, study: int) -> tuple:
+    def get_sourcetypes(self, study: int) -> tuple:
         """
         Get all sourcetypes in a study
         :param study_id: the study id
@@ -864,7 +864,7 @@ class DataWarehouse:
         return res
 
     
-    def sourcetypep(self: object, id: int) -> bool:
+    def sourcetypep(self, id: int) -> bool:
         """
         Sourcetype existence predicate
         :param: sourcetype id
@@ -875,7 +875,7 @@ class DataWarehouse:
         return len(res)>0
 
 
-    def add_sourcetype(self: object, study: int, description: str, version=None) -> tuple:
+    def add_sourcetype(self, study: int, description: str, version=None) -> tuple:
         """
         Adds a sourcetype
         :param study: the study that the sourcetype is attached to
@@ -906,7 +906,7 @@ class DataWarehouse:
         return free_id
     
 
-    def update_sourcetype_version(self: object, id: int, version: str) -> tuple:
+    def update_sourcetype_version(self, id: int, version: str) -> tuple:
         """
         Updates a sourcetype version
         :param id: id of the sourcetype
@@ -926,7 +926,7 @@ class DataWarehouse:
         return id
 
 
-    def get_source_by_description(self: object, description: str) -> tuple:
+    def get_source_by_description(self, description: str) -> tuple:
         """
         Gets a source entry corresponding to a description of a source
         :param description: the description
@@ -937,13 +937,13 @@ class DataWarehouse:
             WHERE source.sourceid='{}';
             """.format(description)
         res = self.return_query_result(q)
-        if len(res)>0:
+        if len(res) > 0:
             return True, res[0][0]
         else:
             return False, res
         
 
-    def add_source(self: object, sourcetype: int, sourceid: str) -> tuple:
+    def add_source(self, sourcetype: int, sourceid: str) -> tuple:
         """
         Adds a source. This doesn't check for duplicate names.
         :param sourcetype: the sourcetype id that the source is an instance of
@@ -1093,7 +1093,7 @@ class DataWarehouse:
     ###########################################################################
     # Study methods
     ###########################################################################
-    def studyp(self: object, id: int) -> bool:
+    def studyp(self, id: int) -> bool:
         """
         Study existence predicate
         :param: study id
@@ -1104,7 +1104,7 @@ class DataWarehouse:
         return len(res)>0
 
 
-    def get_studies(self: object) -> list:
+    def get_studies(self) -> list:
         """
         Get all studies in the data warehouse
         :return: list of all the studies (id and studyid)
@@ -1114,18 +1114,26 @@ class DataWarehouse:
         return res
 
 
-    def get_study(self: object, local_study_id: str) -> tuple:
+    def get_study(self, local_study_id: str) -> tuple:
         """
         Gets the unique id of a study from a local study ID
         :param local_study_id: the local study id (researcher name for the study)
         :return The data warehouse id of the study
         """
         q = " SELECT id FROM study WHERE study.studyid ='{}'; ".format(local_study_id)
+
         res = self.return_query_result(q)
-        return (len(res) > 0), tuple(res[0])
+        n = len(res)
+        found = n == 1
+        if found:
+            return found, res[0][0]
+        elif n == 0:
+            return found, None
+        else:  # elif n > 1:
+            raise ValueError("Multiple studies with local study id {} found".format(local_study_id))
 
 
-    def add_study(self: object, local_study_id: str) -> int:
+    def add_study(self, local_study_id: str) -> int:
         """
         Add a study into the data warehouse
         :param local_study_id: researcher-defined label identifying the study
@@ -1146,22 +1154,20 @@ class DataWarehouse:
                     (free_id, local_study_id))  # insert the new entry
         self.dbConnection.commit()
         return free_id
-    
 
-    def add_study_if_unique(self: object, local_study_id: str) -> tuple:
+
+    def add_study_if_unique(self, local_study_id: str) -> int:
         """
         Add a study into the data warehouse unless its label already exists
         :param local_study_id: researcher-defined label identifying the study
         :return (study added, (studyid(s)))
         """
-        cur = self.dbConnection.cursor()
-        q = " SELECT (id) FROM study WHERE studyid='{}'; ".format(local_study_id)
-        res = self.return_query_result(q)
-        studyid_already_exists = len(res) > 0
-        if studyid_already_exists:
-            return False, tuple([res[i][0] for i in range(len(res))])
+        already_exists, id_study = self.get_study(local_study_id)
+
+        if already_exists:
+            raise ValueError('Study with local study id {} already exists'.format(local_study_id))
         else:
-            return True, (self.add_study(local_study_id),)
+            return self.add_study(local_study_id)
     
 
     ###########################################################################
@@ -1186,7 +1192,7 @@ class DataWarehouse:
             return found, None
 
 
-    def get_trials_in_study(self: object, study: int) -> list:
+    def get_trials_in_study(self, study: int) -> list:
         """
         Get all trials in the given study ID
         :return: list of all the trials (id, study, description)
@@ -1196,7 +1202,7 @@ class DataWarehouse:
         return res
 
 
-    def add_trial(self: object, study: int, trial_description: str) -> int:
+    def add_trial(self, study: int, trial_description: str) -> int:
         """
         Add a trial into the data warehouse, for a particular study
         :param study: the study id to attach the trial to
@@ -1220,7 +1226,7 @@ class DataWarehouse:
         return free_id
     
 
-    def add_trial_if_unique(self: object, study: int, trial_description: str) -> tuple:
+    def add_trial_if_unique(self, study: int, trial_description: str) -> tuple:
         """
         Add a trial into the data warehouse unless its label already exists in the given study
         :param study: the study id to attach the trial to
@@ -1280,7 +1286,7 @@ class DataWarehouse:
             return found, None
 
 
-    def add_category(self: object, study: int, cnames: list, measurementtype: int) -> int:
+    def add_category(self, study: int, cnames: list, measurementtype: int) -> int:
         """
         Adds a new measurement category. The organisation of the category data
         is up to the user. The category ids will be auto-generated in the order
@@ -1329,7 +1335,7 @@ class DataWarehouse:
     ###########################################################################
     # Units methods
     ###########################################################################
-    def unitp(self: object, id: int) -> bool:
+    def unitp(self, id: int) -> bool:
         """
         Unit existence predicate
         :param: unit id
@@ -1340,7 +1346,7 @@ class DataWarehouse:
         return len(res)>0
 
 
-    def add_unit(self: object, study: int, name: str) -> int:
+    def add_unit(self, study: int, name: str) -> int:
         """
         Adds a new unit into the units table. Unit names should be unique
         within a study. If the name already exists the function returns the id;
@@ -1377,7 +1383,7 @@ class DataWarehouse:
     # Bounds methods
     # These should be consolidated into a common function
     ###########################################################################
-    def add_boundsint(self: object, study: int, measurementtype: int, minval: int, maxval: int) -> tuple:
+    def add_boundsint(self, study: int, measurementtype: int, minval: int, maxval: int) -> tuple:
         """
         Add bounds to the boundsint table
         TODO: the study doesn't really need to be supplied, it can be looked up
@@ -1413,7 +1419,7 @@ class DataWarehouse:
         self.dbConnection.commit()
         return True
     
-    def add_boundsreal(self: object, study: int, measurementtype: int, minval: float, maxval: float) -> tuple:
+    def add_boundsreal(self, study: int, measurementtype: int, minval: float, maxval: float) -> tuple:
         """
         Add bounds to the boundsreal table
         TODO: the study doesn't really need to be supplied, it can be looked up
@@ -1449,7 +1455,7 @@ class DataWarehouse:
         self.dbConnection.commit()
         return True
     
-    def add_boundsdatetime(self: object, study: int, measurementtype: int, minval: int, maxval: int) -> tuple:
+    def add_boundsdatetime(self, study: int, measurementtype: int, minval: int, maxval: int) -> tuple:
         """
         Add bounds to the boundsdatetime table
         TODO: the study doesn't really need to be supplied, it can be looked up
