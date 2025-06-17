@@ -430,7 +430,7 @@ class DataWarehouse:
             return False
 
 
-    def add_measurementtype(self, study: int, valtype: int, description: str, unit=None) -> int:
+    def add_measurement_type(self, study: int, valtype: int, description: str, unit=None) -> int:
         """
         Adds a new measurementtype. A combination of the descriptive names and
         the value type should be unique within a study. If the combination
@@ -480,17 +480,21 @@ class DataWarehouse:
     ###########################################################################
     # Measurement Group methods
     ###########################################################################
-    def get_measurement_group(self, study_id, measurementgroup_description):
+    def get_measurement_group(self, study_id, description):
         """
-        maps from the measurementgroup_description to the measurement group id used within the warehouse
-        :param study_id: the study id
-        :param measurementgroup_description: the description field of the measurement group
-        :return (whether the measurement group exists, the measurement group)
+        Maps from the measurement group description to the measurement group id used within the warehouse
+        :param study_id: The study id
+        :type study_id: int
+        :param description: The description/name of the measurement group
+        :type description: str
+        :return: A tuple of two elements. The first element is True if the measurement group exists or False if
+        otherwise. The second element is the id of the found measurement group.
+        :rtype: tuple[bool, int]
         """
 
         q = " SELECT id FROM measurementgroup " \
             " WHERE measurementgroup.study       = " + str(study_id) + \
-            " AND   measurementgroup.description = '" + measurementgroup_description + "';"
+            " AND   measurementgroup.description = '" + description + "';"
         res = self.return_query_result(q)
         found = len(res) == 1
         if found:
@@ -773,39 +777,47 @@ class DataWarehouse:
         return result
     
 
-    def add_measurementgroup(self, study: int, description: str) -> tuple:
+    def add_measurement_group(self, study_id, description):
         """
         Adds a new measurementgroup. Group names should be unique within a
         study. If the name already exists the function returns the id;
         otherwise it will create a new entry and return the id.
-        :param study: the study id
-        :param name: the name of the measurement group
-        :return: (unit added, unit id)
+        :param study_id: The study id
+        :type study_id: int
+        :param description: The description/name of the measurement group
+        :type description: str
+        :return: A tuple of two elements. The first element is True if the measurement group exists after the execution
+        of this function or False if otherwise. The second element is the id of the found measurement group.
+        :rtype: tuple[bool, int]
         """
-        if not self.studyp(study):
+        if not self.studyp(study_id):
             return False, None
-        
-        cur = self.dbConnection.cursor()
-        q = " SELECT (id) FROM measurementgroup WHERE study={} AND description='{}';  ".format(study, description)
-        res = self.return_query_result(q)
-        mg_already_exists = len(res) > 0
-        if mg_already_exists:
-            return False, res[0][0]
-        
-        q = " SELECT MAX(id) FROM measurementgroup; "
-        res = self.return_query_result(q)  # find the biggest id
-        max_id = res[0][0]
-        if max_id is None:
-            free_id = 0
-        else:
-            free_id = max_id + 1  # the next free id
-        cur.execute("""
-                    INSERT INTO measurementgroup (id, description, study)
-                    VALUES (%s, %s, %s);
-                    """,
-                    (free_id, description, study))  # insert the new entry
-        self.dbConnection.commit()
-        return True, free_id
+
+        inserted, id_mg = self.get_measurement_group(study_id=study_id, description=description)
+
+        if not inserted:
+
+            cur = self.dbConnection.cursor()
+
+            retry = True
+            while retry:
+                try:
+                    cur.execute(
+                        """
+                        INSERT INTO measurementgroup (id, description, study)
+                        VALUES (DEFAULT, %s, %s);
+                        """,
+                        (description, study_id))  # insert the new entry
+                    retry = False
+                except psycopg2.errors.UniqueViolation:
+                    self.dbConnection.rollback()
+                    retry = True
+
+            self.dbConnection.commit()
+
+            inserted, id_mg = self.get_measurement_group(study_id=study_id, description=description)
+
+        return inserted, id_mg
     
         
     def connect_mt_to_mg(self, study: int, mt: int, mg: int, name=None, optional=False) -> tuple:
@@ -1114,11 +1126,14 @@ class DataWarehouse:
         return res
 
 
-    def get_study(self, local_study_id: str) -> tuple:
+    def get_study(self, local_study_id):
         """
         Gets the unique id of a study from a local study ID
         :param local_study_id: the local study id (researcher name for the study)
-        :return The data warehouse id of the study
+        :type local_study_id: str
+        :return: A tuple of two elements. The first element is True if the study exists or False if otherwise. The
+        second element is the id of the found study.
+        :rtype: tuple[bool, int]
         """
         q = " SELECT id FROM study WHERE study.studyid ='{}'; ".format(local_study_id)
 
@@ -1128,35 +1143,47 @@ class DataWarehouse:
         if found:
             return found, res[0][0]
         elif n == 0:
-            return found, None
+            return found, res
         else:  # elif n > 1:
             raise ValueError("Multiple studies with local study id {} found".format(local_study_id))
 
 
-    def add_study(self, local_study_id: str) -> int:
+    def add_study(self, local_study_id):
         """
         Add a study into the data warehouse unless its label already exists
         :param local_study_id: researcher-defined label identifying the study
-        :return: The id of the new study
+        :type local_study_id: str
+        :return: A tuple of two elements. The first element is True if the study exists after the execution of this
+        function or False if otherwise. The second element is the id of the study.
+        :rtype: tuple[bool, int]
         """
 
-        already_exists, id_study = self.get_study(local_study_id)
+        inserted, id_study = self.get_study(local_study_id)
 
-        if already_exists:
-            return id_study
-        else:
+        if not inserted:
+
             cur = self.dbConnection.cursor()
-            cur.execute("""
+
+            retry = True
+            while retry:
+                try:
+                    cur.execute(
+                        """
                         INSERT INTO study (id, studyid)
                         VALUES (DEFAULT, %s);
                         """,
                         (local_study_id,))  # insert the new entry
+                    retry = False
+                except psycopg2.errors.UniqueViolation:
+                    self.dbConnection.rollback()
+                    retry = True
+
             self.dbConnection.commit()
 
-            already_exists, id_study = self.get_study(local_study_id)
+            inserted, id_study = self.get_study(local_study_id)
 
-            return id_study
-    
+        return inserted, id_study
+
 
     ###########################################################################
     # Trial methods
@@ -1177,7 +1204,7 @@ class DataWarehouse:
             return found, res[0][0]
         else:
             # print("Trial", trial_description, " not found in trial table")
-            return found, None
+            return found, res
 
 
     def get_trials_in_study(self, study: int) -> list:
@@ -1251,7 +1278,7 @@ class DataWarehouse:
         if found:
             return found, res[0][0]
         else:
-            return found, None
+            return found, res
 
 
     def get_category_name_from_id(self, study, measurement_type, category_id):
@@ -1271,7 +1298,7 @@ class DataWarehouse:
         if found:
             return found, res[0][0]
         else:
-            return found, None
+            return found, res
 
 
     def add_category(self, study: int, cnames: list, measurementtype: int) -> int:
