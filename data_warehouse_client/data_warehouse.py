@@ -1135,39 +1135,27 @@ class DataWarehouse:
 
     def add_study(self, local_study_id: str) -> int:
         """
-        Add a study into the data warehouse
-        :param local_study_id: researcher-defined label identifying the study
-        :return the database id of the new study
-        """
-        cur = self.dbConnection.cursor()
-        q = " SELECT MAX(id) FROM study; "
-        res = self.return_query_result(q)  # find the biggest id
-        max_id = res[0][0]
-        if max_id is None:
-            free_id = 0
-        else:
-            free_id = max_id + 1  # the next free id
-        cur.execute("""
-                    INSERT INTO study (id, studyid)
-                    VALUES (%s, %s);
-                    """,
-                    (free_id, local_study_id))  # insert the new entry
-        self.dbConnection.commit()
-        return free_id
-
-
-    def add_study_if_unique(self, local_study_id: str) -> int:
-        """
         Add a study into the data warehouse unless its label already exists
         :param local_study_id: researcher-defined label identifying the study
-        :return (study added, (studyid(s)))
+        :return: The id of the new study
         """
+
         already_exists, id_study = self.get_study(local_study_id)
 
         if already_exists:
-            raise ValueError('Study with local study id {} already exists'.format(local_study_id))
+            return id_study
         else:
-            return self.add_study(local_study_id)
+            cur = self.dbConnection.cursor()
+            cur.execute("""
+                        INSERT INTO study (id, studyid)
+                        VALUES (DEFAULT, %s);
+                        """,
+                        (local_study_id,))  # insert the new entry
+            self.dbConnection.commit()
+
+            already_exists, id_study = self.get_study(local_study_id)
+
+            return id_study
     
 
     ###########################################################################
