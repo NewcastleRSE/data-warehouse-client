@@ -25,7 +25,7 @@ COMPOSE_FILE=compose.yaml
 ###############################################################################
 # Orchestration
 ###############################################################################
-up : env-make-secrets $(DW_CREDFILE) client
+up : env-make-secrets compose-file $(DW_CREDFILE) client
 	$(COMPOSE) up
 
 down : $(ENVFILE)
