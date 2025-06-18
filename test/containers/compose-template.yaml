@@ -1,0 +1,38 @@
+###############################################################################
+# Docker Compose template
+# Generate actual compose file from this using envsubst (see Makefile)
+###############################################################################
+
+services:
+
+  ${COMPOSE_SERVICE_DB}:
+    image: postgres:14.17
+    restart: no
+    shm_size: 128mb
+    env_file:
+      - .env
+    ports:
+      - 5432:5432
+    volumes:
+      - ./initdata:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pgadmin -d testdb"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+
+  ${COMPOSE_SERVICE_CLIENT}:
+    build: .
+    ports:
+      - "8888:8000"
+    depends_on:
+      pgdb:
+        condition: service_healthy
+    command: python3 run-tests.py
+
+  ${COMPOSE_SERVICE_ADMIN}:
+    image: adminer
+    restart: no
+    ports:
+      - 8080:8080
+
