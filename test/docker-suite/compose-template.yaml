@@ -22,7 +22,8 @@ services:
       retries: 10
 
   ${COMPOSE_SERVICE_CLIENT}:
-    build: .
+    build:
+      context: ./containers/client
     ports:
       - "8888:8000"
     depends_on:
