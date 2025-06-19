@@ -39,4 +39,4 @@ class TestConnection(unittest.TestCase):
     def test_db_connection(self):
         dw = None
         dw = data_warehouse.DataWarehouse("testdb-credentials.json","testdb")
-        unittest.unittest.assertIsNotNone(dw)
+        self.assertIsNotNone(dw)
