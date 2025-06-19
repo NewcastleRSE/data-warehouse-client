@@ -14,7 +14,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ./initdata:/docker-entrypoint-initdb.d
+      - ${COMPOSE_MOUNT_INITDATA}:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pgadmin -d testdb"]
       interval: 1s
@@ -26,10 +26,12 @@ services:
       context: ./containers/client
     ports:
       - "8888:8000"
+    volumes:
+      - ${COMPOSE_MOUNT_LOCAL}:/client/${COMPOSE_MOUNT_CONTAINER}
     depends_on:
       pgdb:
         condition: service_healthy
-    command: python3 run-tests.py
+    command: /bin/bash run-tests.sh
 
   ${COMPOSE_SERVICE_ADMIN}:
     image: adminer

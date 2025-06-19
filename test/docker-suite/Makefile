@@ -3,10 +3,10 @@ CP = cp
 MV = mv
 MKDIR = mkdir -p
 RM = rm -f
-RMR = rm -fr
+RM_R = rm -fr
 
 DOCKER = sudo docker
-COMPOSE = $(DOCKER) compose
+COMPOSE = $(DOCKER) compose -v
 
 
 ###############################################################################
@@ -30,10 +30,10 @@ SCRIPTS_DIR=./resources/scripts
 ###############################################################################
 # Orchestration
 ###############################################################################
-up : env-make-secrets compose-file $(DW_CREDFILE) client
+up : $(OUTPUT_DIR) $(INIT_FILES) $(DW_CREDFILE) client compose-file
 	$(COMPOSE) up
 
-down : $(ENV_FILE)
+down :
 	$(COMPOSE) down
 
 restart :
@@ -68,10 +68,14 @@ $(DW_CREDFILE) : $(ENV_FILE)
 # Database initialisation
 ###############################################################################
 INIT_FILES = 01.sql 02.sql
-INIT_DATA_DIR = ./initdata
+INIT_DATA_DIR = ${COMPOSE_MOUNT_INITDATA}
 SCHEMA_DIR = ../../schema
+OUTPUT_DIR = ${COMPOSE_MOUNT_LOCAL}
 
-init-data : $(INIT_DATA_DIR) $(INIT_FILES)
+mount-points: $(OUTPUT_DIR) $(INIT_DATA_DIR) $(INIT_FILES)
+
+$(OUTPUT_DIR) :
+	$(MKDIR) $@
 
 $(INIT_DATA_DIR) :
 	$(MKDIR) $@
@@ -83,9 +87,15 @@ $(INIT_DATA_DIR) :
 	$(CP) $< $(INIT_DATA_DIR)/$@
 
 
+
 ###############################################################################
 # Clean
 ###############################################################################
+clean-all: clean clean-outputs
+
 clean:
 	$(RM) $(ENV_FILE) $(COMPOSE_FILE) $(CLIENT_DOCKER_DIR)/$(DW_CREDFILE)
-	$(RMR) $(INIT_DATA_DIR)
+	$(RM_R) $(INIT_DATA_DIR)
+
+clean-outputs:
+	sudo $(RM_R) $(OUTPUT_DIR)
