@@ -1,3 +1,23 @@
+# Copyright 2020 Newcastle University.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+###############################################################################
+# Makefile for e-Science Central Data Warehouse testing
+# Run in 2 stages:
+#     - make .env
+#     - make up
+###############################################################################
 SHELL = /bin/bash
 CP = cp
 MV = mv
@@ -30,7 +50,9 @@ SCRIPTS_DIR=./resources/scripts
 ###############################################################################
 # Orchestration
 ###############################################################################
-up : $(OUTPUT_DIR) $(INIT_FILES) $(DW_CREDFILE) client compose-file
+.PHONY : up test down restart client
+
+up test: $(OUTPUT_DIR) $(INIT_FILES) $(DW_CREDFILE) ${COMPOSE_FILE} client
 	$(COMPOSE) up
 
 down :
@@ -43,20 +65,15 @@ restart :
 client : ${CLIENT_DOCKER_DIR}/Dockerfile
 	$(COMPOSE) build
 
-compose-file : env-make-secrets $(COMPOSE_TEMPLATE)
+${COMPOSE_FILE} : ${ENV_FILE} $(COMPOSE_TEMPLATE)
 	@$(SHELL) -c "export $(grep -v '^#' ${ENV_FILE} | xargs) && envsubst < ${COMPOSE_TEMPLATE} > ${COMPOSE_FILE}"
 
 
 ###############################################################################
 # Environment
 ###############################################################################
-#test :
-#sudo docker run -rm --name some-postgres -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d -p 5432:5432 postgres:14.17
-
 $(ENV_FILE) : $(ENV_FILE_DEFAULT)
 	$(SHELL) $(SCRIPTS_DIR)/env-copy-secrets.sh
-
-env-make-secrets : $(ENV_FILE)
 	$(SHELL) $(SCRIPTS_DIR)/env-make-secrets.sh
 
 $(DW_CREDFILE) : $(ENV_FILE)
@@ -89,13 +106,22 @@ $(INIT_DATA_DIR) :
 
 
 ###############################################################################
-# Clean
+# Clean. Make sure to check directories exist.
 ###############################################################################
+.PHONY : clean-all clean clean-outputs
+
 clean-all: clean clean-outputs
 
 clean:
-	$(RM) $(ENV_FILE) $(COMPOSE_FILE) $(CLIENT_DOCKER_DIR)/$(DW_CREDFILE)
+	$(RM) $(ENV_FILE) $(COMPOSE_FILE)
+ifdef ($(DW_CREDFILE))
+	$(RM) $(CLIENT_DOCKER_DIR)/$(DW_CREDFILE)
+endif
+ifdef ($(INIT_DATA_DIR)
 	$(RM_R) $(INIT_DATA_DIR)
+endif
 
 clean-outputs:
+ifdef ($(OUTPUT_DIR))
 	sudo $(RM_R) $(OUTPUT_DIR)
+endif
