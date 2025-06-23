@@ -1145,7 +1145,7 @@ class DataWarehouse:
         elif n == 0:
             return found, res
         else:  # elif n > 1:
-            raise ValueError("Multiple studies with local study id {} found".format(local_study_id))
+            raise ValueError('Multiple studies found with local study id "{}"'.format(local_study_id))
 
 
     def add_study(self, local_study_id):
