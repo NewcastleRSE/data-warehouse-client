@@ -845,16 +845,16 @@ class DataWarehouse:
     ###########################################################################
     # Source methods
     ###########################################################################
-    def get_sourcetype_by_description(self, description: str) -> tuple:
+    def get_sourcetype_by_description(self, description: str, study) -> tuple:
         """
         Gets the data warehouse entry for a description of a sourcetype
         :param description: the description
         :return: (id, description, version, study)
         """
         q = """
-            SELECT (id, description, version, study) FROM sourcetype
-            WHERE sourcetype.description='{}';
-            """.format(description)
+            SELECT id FROM sourcetype
+            WHERE sourcetype.description='{}' and sourcetype.study = {};
+            """.format(description, study)
         res = self.return_query_result(q)
         if len(res)>0:
             return True, res[0][0]
@@ -938,16 +938,16 @@ class DataWarehouse:
         return id
 
 
-    def get_source_by_description(self, description: str) -> tuple:
+    def get_source_by_description(self, description: str, sourcetype) -> tuple:
         """
         Gets a source entry corresponding to a description of a source
         :param description: the description
         :return: (id, description, sourcetype, study)
         """
         q = """
-            SELECT id, sourceid, sourcetype, study FROM source
-            WHERE source.sourceid='{}';
-            """.format(description)
+            SELECT id FROM source
+            WHERE source.sourceid='{}' and source.sourcetype='{}';
+            """.format(description, sourcetype)
         res = self.return_query_result(q)
         if len(res) > 0:
             return True, res[0][0]
