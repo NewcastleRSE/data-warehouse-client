@@ -23,12 +23,12 @@ RUN apt update && apt upgrade -y
 RUN apt install git -y
 RUN apt install postgresql-client -y
 
-COPY requirements.txt .
+COPY requirements-remote.txt .
 COPY testdb-credentials.json .
 COPY run-tests.sh .
 COPY tests ./tests
 
 RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install -r requirements-remote.txt
 
 EXPOSE 8888

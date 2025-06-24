@@ -38,10 +38,12 @@ services:
   ${COMPOSE_SERVICE_CLIENT}:
     build:
       context: ./containers/client
+      dockerfile: ${COMPOSE_SERVICE_CLIENT_DOCKERFILE}
     ports:
       - "8888:8000"
     volumes:
       - ${COMPOSE_MOUNT_LOCAL}:/client/${COMPOSE_MOUNT_CONTAINER}
+      - ../..:/data_warehouse_client
     depends_on:
       pgdb:
         condition: service_healthy

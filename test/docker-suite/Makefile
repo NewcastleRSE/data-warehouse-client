@@ -63,7 +63,7 @@ restart :
 	$(COMPOSE) down
 	$(COMPOSE) up --build
 
-client : ${CLIENT_DOCKER_DIR}/Dockerfile
+client : ${CLIENT_DOCKER_DIR}/$(COMPOSE_SERVICE_CLIENT_DOCKERFILE)
 	$(COMPOSE) build
 
 ${COMPOSE_FILE} : ${ENV_FILE} $(COMPOSE_TEMPLATE)
