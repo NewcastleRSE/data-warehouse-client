@@ -29,6 +29,7 @@ DOCKER = sudo docker
 COMPOSE = $(DOCKER) compose -v
 
 
+
 ###############################################################################
 # Load .env file
 ###############################################################################
@@ -52,15 +53,15 @@ SCRIPTS_DIR=./resources/scripts
 ###############################################################################
 .PHONY : up test down restart client
 
-up test: $(OUTPUT_DIR) $(INIT_FILES) $(DW_CREDFILE) ${COMPOSE_FILE} client
-	$(COMPOSE) up
+up test: $(OUTPUT_DIR) 01.sql 02.sql $(DW_CREDFILE) ${COMPOSE_FILE} client
+	$(COMPOSE) up --build
 
 down :
 	$(COMPOSE) down
 
 restart :
 	$(COMPOSE) down
-	$(COMPOSE) up
+	$(COMPOSE) up --build
 
 client : ${CLIENT_DOCKER_DIR}/Dockerfile
 	$(COMPOSE) build
@@ -89,7 +90,9 @@ INIT_DATA_DIR = ${COMPOSE_MOUNT_INITDATA}
 SCHEMA_DIR = ../../schema
 OUTPUT_DIR = ${COMPOSE_MOUNT_LOCAL}
 
-mount-points: $(OUTPUT_DIR) $(INIT_DATA_DIR) $(INIT_FILES)
+init-files : $(INIT_FILES)
+
+mount-points : $(OUTPUT_DIR) $(INIT_DATA_DIR) $(INIT_FILES)
 
 $(OUTPUT_DIR) :
 	$(MKDIR) $@
@@ -97,31 +100,34 @@ $(OUTPUT_DIR) :
 $(INIT_DATA_DIR) :
 	$(MKDIR) $@
 
-01.sql : $(SCHEMA_DIR)/basic_dw_roles.sql
-	$(CP) $< $(INIT_DATA_DIR)/$@
+01.sql : $(SCHEMA_DIR)/basic_dw_roles.sql $(INIT_DATA_DIR)
+	sudo $(CP) $< $(INIT_DATA_DIR)/$@
 
-02.sql : $(SCHEMA_DIR)/basic_dw_schema.sql
-	$(CP) $< $(INIT_DATA_DIR)/$@
+02.sql : $(SCHEMA_DIR)/basic_dw_schema.sql $(INIT_DATA_DIR)
+	sudo $(CP) $< $(INIT_DATA_DIR)/$@
 
 
 
 ###############################################################################
 # Clean. Make sure to check directories exist.
 ###############################################################################
-.PHONY : clean-all clean clean-outputs
+.PHONY : clean clean-all clean-env clean-misc clean-dirs
 
-clean-all: clean clean-outputs
+clean: clean-misc clean-dirs
 
-clean:
-	$(RM) $(ENV_FILE) $(COMPOSE_FILE)
-ifdef ($(DW_CREDFILE))
+clean-all clean-env: clean-misc clean-dirs
+	$(RM) $(ENV_FILE)
+
+clean-misc:
+	$(RM) $(COMPOSE_FILE)
+ifdef DW_CREDFILE
 	$(RM) $(CLIENT_DOCKER_DIR)/$(DW_CREDFILE)
 endif
-ifdef ($(INIT_DATA_DIR)
-	$(RM_R) $(INIT_DATA_DIR)
-endif
 
-clean-outputs:
-ifdef ($(OUTPUT_DIR))
+clean-dirs:
+ifdef OUTPUT_DIR
 	sudo $(RM_R) $(OUTPUT_DIR)
+endif
+ifdef INIT_DATA_DIR
+	sudo $(RM_R) $(INIT_DATA_DIR)
 endif
