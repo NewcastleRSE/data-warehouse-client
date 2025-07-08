@@ -20,3 +20,4 @@ echo "Starting tests" 1>&3
 
 python3 -m unittest -v -b tests.test_connection 1>&3
 python3 -m unittest -v -b tests.test_data_warehouse 1>&3
+python3 -m unittest -v -b tests.test_data_warehouse_participants 1>&3
