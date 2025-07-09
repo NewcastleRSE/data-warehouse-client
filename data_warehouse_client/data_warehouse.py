@@ -1059,21 +1059,21 @@ class DataWarehouse:
         :res the new participant id
         """
         cur = self.dbConnection.cursor()
-        q = " SELECT MAX(id) FROM participant " \
-            " WHERE participant.study = " + str(study_id) + ";"
-        res = self.return_query_result(q)  # find the biggest id
-        max_id = res[0][0]
-        if max_id is None:
-            free_id = 0
-        else:
-            free_id = max_id + 1  # the next free id
+        #q = " SELECT MAX(id) FROM participant " \
+        #    " WHERE participant.study = " + str(study_id) + ";"
+        #res = self.return_query_result(q)  # find the biggest id
+        #max_id = res[0][0]
+        #if max_id is None:
+        #    free_id = 0
+        #else:
+        #    free_id = max_id + 1  # the next free id
         cur.execute("""
                     INSERT INTO participant(id,participantid,study)
-                    VALUES (%s, %s, %s);
+                    VALUES (DEFAULT, %s, %s);
                     """,
-                    (free_id, local_participant_id, study_id))  # insert the new entry
+                    (local_participant_id, study_id))  # insert the new entry
         self.dbConnection.commit()
-        return free_id
+        return self.get_participant(study_id, local_participant_id)
 
 
     def add_participant_if_new(self, study_id, participant_id, local_participant_id):
