@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from datetime import datetime
-from sys import exit
 import psycopg2
 from json import load
 from more_itertools import intersperse
