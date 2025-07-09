@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "data-warehouse-client"
+version = "2.0.0"
+dependencies = [
+    "more-itertools",
+    "matplotlib",
+    "psycopg2",
+    "tabulate"
+]
+requires-python = ">= 3.12"
+authors = [
+    {name = "Paul Watson", email = "paul.watson@newcastle.ac.uk"},
+]
+maintainers = [
+    {name = "Robin Wardle", email = "robin.wardle@newcastle.ac.uk"},
+    {name = "Carmelo Calafiore", email = "carmelo.calafiore@newcastle.ac.uk"},
+]
+description = "This package provides user access to a e-Science Central Data Warehouse deployment that can be used to store, access and analyse data collected in scientific studies, including for healthcare applications"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICEN[CS]E.*"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+]
+
+[project.urls]
+Repository = "https://github.com/NewcastleRSE/data-warehouse-client/"
+
+[tool.setuptools.packages.find]
+where = ["data_warehouse_client"]
