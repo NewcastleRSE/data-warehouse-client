@@ -172,21 +172,23 @@ class DataWarehouse:
         self.credentialsFile = credentials_file
         self.dbName = db_name
         # load credentials
-        print("Loading credentials..")
         try:
             with open(self.credentialsFile, 'r') as fIn:
                 creds = load(fIn)
         except Exception as e:
-            exit("Unable to load the credential's file! Exiting.\n" + str(e))
+            print(f"Unable to load credentials from: {self.credentialsFile}")
+            raise
+        print("Credentials file loaded")
 
-        print("Connecting to the database..")
         # establish connection
         conn_string = f"dbname={self.dbName} user={creds['user']} host={creds['IP']} password={creds['pass']}"
         try:
             self.dbConnection = psycopg2.connect(conn_string)
         except Exception as e:
-            exit("Unable to connect to the database! Exiting.\n" + str(e))
-        print("Init successful! Running queries.\n")
+            print(f"Unable to connect to the database with connection string:\n"+
+                  f"\tdbname={self.dbName} user={creds['user']} host={creds['IP']} password=****************")
+            raise
+        print(f"Connected to database {self.dbName} as user {creds['user']}")
 
 
     ###########################################################################

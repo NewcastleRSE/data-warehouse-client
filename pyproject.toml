@@ -33,5 +33,5 @@ classifiers = [
 [project.urls]
 Repository = "https://github.com/NewcastleRSE/data-warehouse-client/"
 
-[tool.setuptools.packages.find]
-where = ["data_warehouse_client"]
+[tool.setuptools]
+packages = ["data_warehouse_client"]
