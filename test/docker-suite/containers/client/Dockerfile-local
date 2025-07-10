@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.12
+FROM python:3.13
 
 LABEL maintainer="Robin Wardle <robin.wardle@newcastle.ac.uk>"
 
@@ -21,7 +21,6 @@ RUN mkdir outputs
 
 RUN apt update && apt upgrade -y
 RUN apt install git -y
-RUN apt install vim -y
 RUN apt install postgresql-client -y
 
 COPY requirements-local.txt .

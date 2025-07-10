@@ -14,7 +14,7 @@
 
 
 import pandas as pd
-import ydata_profiling as pp
+import pandas_profiling as pp
 from datetime import datetime
 
 
