@@ -193,38 +193,57 @@ class DataWarehouse:
     ###########################################################################
     # General SQL methods
     ###########################################################################
-    def return_query_result(self, query_text):
+    def return_query_result(self: object, query_text: str) -> list:
         """
-        executes an SQL query. It is used for SELECT queries.
+        Executes an SQL query. It is used for SELECT queries.
         :param query_text: the SQL
         :return: the result as a list of rows.
         """
+        # TODO verify best practice exception handling and rollback
         cur = self.dbConnection.cursor()
-        cur.execute(query_text)
-        return cur.fetchall()
+        try:
+            cur.execute(query_text)
+            self.dbConnection.commit()
+            return cur.fetchall()
+        except Exception as e:
+            print(f"Error: {e}")
+            self.dbConnection.rollback()
+            raise
 
 
-    def exec_insert_with_return(self, query_text):
+    def exec_insert_with_return(self: object, query_text: str) -> list:
         """
         Executes INSERT, commits the outcome and returns the result from the RETURNING clause.
         :param query_text: the SQL
         :return the result from the RETURNING clause
         """
+        # TODO verify best practice exception handling and rollback
         cur = self.dbConnection.cursor()
-        cur.execute(query_text)
-        self.dbConnection.commit()
-        return cur.fetchone()
+        try:
+            cur.execute(query_text)
+            self.dbConnection.commit()
+            return cur.fetchone()
+        except Exception as e:
+            print(f"Error: {e}")
+            self.dbConnection.rollback()
+            raise
 
 
-    def exec_sql_with_no_return(self, query_text):
+    def exec_sql_with_no_return(self: object, query_text: str):
         """
         executes SQL and commits the outcome. Used to execute INSERT, UPDATE and DELETE statements with no RETURNING.
         :param query_text: the SQL
         """
+        # TODO verify best practice exception handling and rollback
         cur = self.dbConnection.cursor()
-        cur.execute(query_text)
-        self.dbConnection.commit()
-
+        try:
+            cur.execute(query_text)
+            self.dbConnection.commit()
+        except Exception as e:
+            print(f"Error: {e}")
+            self.dbConnection.rollback()
+            raise
+        
 
     ###########################################################################
     # Measurements methods
@@ -1001,12 +1020,12 @@ class DataWarehouse:
     ###########################################################################
     # Participant methods
     ###########################################################################
-    def get_participant_by_id(self, study, participant):
+    def get_participant_by_id(self: object, study: int, participant: int):
         """
-         maps from unique participant.id to the local id stored with measurements in the warehouse
+        maps from unique participant.id to the local id stored with measurements in the warehouse
          :param study: the study id
-         :param participant: the id of the participant in the study
-         :return The participantid of the participant
+         :param participant: the participant id in the study
+         :return The participantid (name)
          """
         q = " SELECT participantid FROM participant " \
             " WHERE participant.study       = " + str(study) + \
@@ -1017,7 +1036,7 @@ class DataWarehouse:
             return found, res[0][0]
         else:
             # print("Participant", participant, " not found in participant.id")
-            return found, res
+            return found, None
 
 
     def get_participant(self, study_id, local_participant_id):
@@ -1039,7 +1058,7 @@ class DataWarehouse:
             return found, res
 
 
-    def get_participants(self, study_id):
+    def get_participants(self: object, study_id: int) -> list:
         """
         Get all participants in a study
         :param study_id: the study id
@@ -1051,22 +1070,14 @@ class DataWarehouse:
         return res
 
 
-    def add_participant(self, study_id, local_participant_id):
+    def add_participant(self: object, study_id: int, local_participant_id) -> tuple:
         """
         add a participant into the data warehouse
         :param study_id: the study id
         :param local_participant_id: the local name for the participant
-        :res the new participant id
+        :return the new participant id
         """
         cur = self.dbConnection.cursor()
-        #q = " SELECT MAX(id) FROM participant " \
-        #    " WHERE participant.study = " + str(study_id) + ";"
-        #res = self.return_query_result(q)  # find the biggest id
-        #max_id = res[0][0]
-        #if max_id is None:
-        #    free_id = 0
-        #else:
-        #    free_id = max_id + 1  # the next free id
         cur.execute("""
                     INSERT INTO participant(id,participantid,study)
                     VALUES (DEFAULT, %s, %s);
