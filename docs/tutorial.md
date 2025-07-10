@@ -49,12 +49,12 @@ All alements of the data warehouse must or should be associated with a *study*. 
 ```
 We can do very little without a study to attach other elements to, so we should add a couple.
 ```python
->>> dw.add_study("Study Zero")
-0
->>> dw.add_study("Test Data")
+>>> dw.add_study("Study One")
 1
+>>> dw.add_study("Test Data")
+2
 >>> dw.get_studies()
-[('(0,"Study Zero")',), ('(1,"Test Data")',)]
+[('(1,"Study One")',), ('(2,"Test Data")',)]
 >>> 
 ```
 ### Adding trials
@@ -109,21 +109,21 @@ Our data warehouse is going to contain three types of measurement as shown in th
 We can add these to the data warehouse using the `add_measurementgroup()` method:
 ```
 >>> dw.add_measurementgroup(0, "Test Group")
-(True, 0)
->>> dw.add_measurementgroup(1, "Q321")
 (True, 1)
->>> dw.add_measurementgroup(1, "GFIT")
+>>> dw.add_measurementgroup(1, "Q321")
 (True, 2)
->>> dw.add_measurementgroup(1, "Unilever Temperature Sensor")
+>>> dw.add_measurementgroup(1, "GFIT")
 (True, 3)
+>>> dw.add_measurementgroup(1, "Unilever Temperature Sensor")
+(True, 4)
 >>> 
 ```
 and we can check the status of our `measurementgroup` table using the `get_all_measurement_groups()` method, which returns a list of all measurement groups in a study. Notice that this function does not distinguish between studies which do not exist, and there being no measurement groups in the study.
 ```
 >>> dw.get_all_measurement_groups(0)
-[(0, 'Test Group')]
+[(1, 'Test Group')]
 >>> dw.get_all_measurement_groups(1)
-[(1, 'Q321'), (2, 'GFIT'), (3, 'Unilever Temperature Sensor')]
+[(2, 'Q321'), (3, 'GFIT'), (4, 'Unilever Temperature Sensor')]
 >>> dw.get_all_measurement_groups(2)
 []
 >>> 
@@ -131,76 +131,76 @@ and we can check the status of our `measurementgroup` table using the `get_all_m
 ### Units
 Many measurements till require units. The data warehouse does not itself perform units or dimensional checking, but it can store a textual description of the unit of a measurement. Units can easily be added to the data warehouse. It's a good idea to create units before creating measurement types (next section).
 ```
->>> dw.add_unit(1, "Test Unit")
-(True, 0)
->>> dw.add_unit(1, "mg")
+>>> dw.add_unit(2, "Test Unit")
 (True, 1)
->>> dw.add_unit(1, "metres")
+>>> dw.add_unit(2, "mg")
 (True, 2)
->>> dw.add_unit(1, "steps per minute")
+>>> dw.add_unit(2, "metres")
 (True, 3)
->>> dw.add_unit(1, "Centrigrade")
+>>> dw.add_unit(2, "steps per minute")
 (True, 4)
+>>> dw.add_unit(2, "Celsius")
+(True, 5)
 >>> 
 ```
 There is currently no inherent way of displaying the units table. However we can use the generic data warehouse `return_query_result()` method to execute an SQL query. *Note that issuing direct SQL commands should be used very sparingly and only if you know what you are doing!*
 ```
 >>> dw.return_query_result("SELECT * FROM units;")
-[(0, 'Test Unit', 1), (1, 'mg', 1), (2, 'metres', 1), (3, 'steps per minute', 1), (4, 'Centrigrade', 1)]
+[(1, 'Test Unit', 1), (2, 'mg', 1), (3, 'metres', 1), (4, 'steps per minute', 1), (5, 'Centrigrade', 1)]
 >>> 
 ```
 ### Measurement types
-A *measurement type* contains information about a specific form of measurement that will be recorded in the data warehouse. A measurement type is defined by the *value type* (e.g. `int`, `real`, `datetime` etc.), the (optional) unit of measurement, and a label. A measurement type also must be attached to a specific study. This tutorial will implement a set of measurement types given in this table. The `valtype` field id reference are explained in Table 1 of `data_warehouse_clien.pdf`.
+A *measurement type* contains information about a specific form of measurement that will be recorded in the data warehouse. A measurement type is defined by the *value type* (e.g. `int`, `real`, `datetime` etc.), the (optional) unit of measurement, and a label. A measurement type also must be attached to a specific study. This tutorial will implement a set of measurement types given in this table. The `valtype` field id reference are explained in Table 1 of `data_warehouse_client.pdf`.
 
 | id | study | description | units | valtype |
 | --- | --- | --- | --- | --- |
-| 0 | 0 | Test Type | | 4 |
-| 1 | 1 | participant has read PIS | | 4 |
-| 2 | 1 | Date of Birth | | 3 |
-| 3 | 1 | Gender | | 5 |
-| 4 | 1 | Comorbidity: PIT | | 4 |
-| 5 | 1 | Name of Drug | | 2 |
-| 6 | 1 | Dosage | 1 | 1 |
-| 7 | 1 | Biopsy Date | | 3 |
-| 8 | 1 | KCCQ clinical evaluation form, Item 5 | | 6 |
-| 9 | 1 | AWS | 2 | 1 |
-| 10 | 1 | Distance | 2 | 1 |
-| 11 | 1 | Stride Length | 2 | 1 |
-| 12 | 1 | Cadence | 3 | 1 |
-| 13 | 1 | Temperature | 4 | 1 |
+| 1 | 0 | Test Type | | 4 |
+| 2 | 1 | participant has read PIS | | 4 |
+| 3 | 1 | Date of Birth | | 3 |
+| 4 | 1 | Gender | | 5 |
+| 5 | 1 | Comorbidity: PIT | | 4 |
+| 6 | 1 | Name of Drug | | 2 |
+| 7 | 1 | Dosage | 1 | 1 |
+| 8 | 1 | Biopsy Date | | 3 |
+| 9 | 1 | KCCQ clinical evaluation form, Item 5 | | 6 |
+| 10 | 1 | AWS | 2 | 1 |
+| 11 | 1 | Distance | 2 | 1 |
+| 12 | 1 | Stride Length | 2 | 1 |
+| 13 | 1 | Cadence | 3 | 1 |
+| 14 | 1 | Temperature | 4 | 1 |
 
 The `units` column ids refer to the `units` ids created in the previous section, so `1` is `mg`, `2` is `metres`, and so on.
 
 Now we can add these measurement types to the data warehouse.
 ```
->>> dw.add_measurementtype(0, 4, "Test Type")
-(True, 0)
->>> dw.add_measurementtype(1, 4, "participant has read PIS")
+>>> dw.add_measurementtype(1, 4, "Test Type")
 (True, 1)
->>> dw.add_measurementtype(1, 3, "Date of Birth")
+>>> dw.add_measurementtype(2, 4, "Participant has read PIS")
 (True, 2)
->>> dw.add_measurementtype(1, 5, "Gender")
+>>> dw.add_measurementtype(2, 3, "Date of Birth")
 (True, 3)
->>> dw.add_measurementtype(1, 4, "Comorbidity: PIT")
+>>> dw.add_measurementtype(2, 5, "Gender")
 (True, 4)
->>> dw.add_measurementtype(1, 2, "Name of Drug")
+>>> dw.add_measurementtype(2, 4, "Comorbidity: PIT")
 (True, 5)
->>> dw.add_measurementtype(1, 1, "Dosage", 1)
+>>> dw.add_measurementtype(2, 2, "Name of Drug")
 (True, 6)
->>> dw.add_measurementtype(1, 3, "Biopsy Date")
+>>> dw.add_measurementtype(2, 1, "Dosage", 1)
 (True, 7)
->>> dw.add_measurementtype(1, 6, "KCCQ clinical evaluation form, Item 5")
+>>> dw.add_measurementtype(2, 3, "Biopsy Date")
 (True, 8)
->>> dw.add_measurementtype(1, 1, "AWS", 2)
+>>> dw.add_measurementtype(2, 6, "KCCQ clinical evaluation form, Item 5")
 (True, 9)
->>> dw.add_measurementtype(1, 1, "Distance", 2)
+>>> dw.add_measurementtype(2, 1, "AWS", 2)
 (True, 10)
->>> dw.add_measurementtype(1, 1, "Stride Length", 2)
+>>> dw.add_measurementtype(2, 1, "Distance", 2)
 (True, 11)
->>> dw.add_measurementtype(1, 1, "Cadence", 3)
+>>> dw.add_measurementtype(2, 1, "Stride Length", 2)
 (True, 12)
->>> dw.add_measurementtype(1, 1, "Temperature", 4)
+>>> dw.add_measurementtype(2, 1, "Cadence", 3)
 (True, 13)
+>>> dw.add_measurementtype(2, 1, "Temperature", 4)
+(True, 14)
 >>> 
 ```
 As before we can examine the table using the generic data warehouse SQL command.
@@ -214,20 +214,20 @@ Within the PostgreSQL client this looks like:
 dw_tutorial=# SELECT * FROM measurementtype;
  id |              description              | valtype | units | study 
 ----+---------------------------------------+---------+-------+-------
-  0 | Test Type                             |       4 |       |     0
-  1 | participant has read PIS              |       4 |       |     1
-  2 | Date of Birth                         |       3 |       |     1
-  3 | Gender                                |       5 |       |     1
-  4 | Comorbidity: PIT                      |       4 |       |     1
-  5 | Name of Drug                          |       2 |       |     1
-  6 | Dosage                                |       1 |     1 |     1
-  7 | Biopsy Date                           |       3 |       |     1
-  8 | KCCQ clinical evaluation form, Item 5 |       6 |       |     1
-  9 | AWS                                   |       1 |     2 |     1
- 10 | Distance                              |       1 |     2 |     1
- 11 | Stride Length                         |       1 |     2 |     1
- 12 | Cadence                               |       1 |     3 |     1
- 13 | Temperature                           |       1 |     4 |     1
+  1 | Test Type                             |       4 |       |     0
+  2 | participant has read PIS              |       4 |       |     1
+  3 | Date of Birth                         |       3 |       |     1
+  4 | Gender                                |       5 |       |     1
+  5 | Comorbidity: PIT                      |       4 |       |     1
+  6 | Name of Drug                          |       2 |       |     1
+  7 | Dosage                                |       1 |     1 |     1
+  8 | Biopsy Date                           |       3 |       |     1
+  9 | KCCQ clinical evaluation form, Item 5 |       6 |       |     1
+ 10 | AWS                                   |       1 |     2 |     1
+ 11 | Distance                              |       1 |     2 |     1
+ 12 | Stride Length                         |       1 |     2 |     1
+ 13 | Cadence                               |       1 |     3 |     1
+ 14 | Temperature                           |       1 |     4 |     1
 (14 rows)
 
 dw_tutorial=# 
@@ -238,13 +238,13 @@ Some of the measurement types describe *categorical* data - `valtype` 4, 5 or 6 
 **`dw.add_category`**(*study*, *cvalues*, *measurementtype*)  
 > Add the categorical values in *cvalues* into the category table, referencing *study* and *measurementtype*. The values in *cvalues* should be in ascending order for ordinal categories; for cardinal and boolean types the order doesn't matter although the internal enumeration numbers will still be allocated in ascending order of the values given.
 ```
->>> dw.add_category(1, ["Y", "N"], 1)
+>>> dw.add_category(2, ["Y", "N"], 1)
 True
->>> dw.add_category(1, ["Male", "Female", "Prefer not to say"], 3)
+>>> dw.add_category(2, ["Male", "Female", "Prefer not to say"], 3)
 True
->>> dw.add_category(1, ["Y", "N"], 4)
+>>> dw.add_category(2, ["Y", "N"], 4)
 True
->>> dw.add_category(1, ["Every Night", "3-4 times per week", "1-2 times per week", "L\
+>>> dw.add_category(2, ["Every Night", "3-4 times per week", "1-2 times per week", "L\
 ess than once per week", "Never over the past 2 weeks"], 8)
 True
 >>> 
@@ -254,18 +254,18 @@ Examining this in `psql`:
 dw_tutorial=# SELECT * FROM category;
  measurementtype | categoryid |        categoryname         | study 
 -----------------+------------+-----------------------------+-------
-               1 |          0 | Y                           |     1
-               1 |          1 | N                           |     1
-               3 |          0 | Male                        |     1
-               3 |          1 | Female                      |     1
-               3 |          2 | Prefer not to say           |     1
-               4 |          0 | Y                           |     1
-               4 |          1 | N                           |     1
-               8 |          0 | Every Night                 |     1
-               8 |          1 | 3-4 times per week          |     1
-               8 |          2 | 1-2 times per week          |     1
-               8 |          3 | Less than once per week     |     1
-               8 |          4 | Never over the past 2 weeks |     1
+               2 |          0 | Y                           |     1
+               2 |          1 | N                           |     1
+               4 |          0 | Male                        |     1
+               4 |          1 | Female                      |     1
+               4 |          2 | Prefer not to say           |     1
+               5 |          0 | Y                           |     1
+               5 |          1 | N                           |     1
+               9 |          0 | Every Night                 |     1
+               9 |          1 | 3-4 times per week          |     1
+               9 |          2 | 1-2 times per week          |     1
+               9 |          3 | Less than once per week     |     1
+               9 |          4 | Never over the past 2 weeks |     1
 (12 rows)
 
 dw_tutorial=# 
@@ -277,13 +277,13 @@ Integer, floating point (real) and datetime measurements can be bounded, that is
 #### Bounded ints (`valtype` 7)
 Suppose a clinical evaluation form asks a patient "How hard is it to walk without an aid - give a number from 1 (easy) to 6 (impossible)". To create this measurement we first need to create a new `measurementtype` with a `valtype` of 7. We will add this to Study 1.
 ```
->>> dw.add_measurementtype(1, 7, "KCCQ clinical evaluation form, Item 10")
-(True, 14)
+>>> dw.add_measurementtype(2, 7, "KCCQ clinical evaluation form, Item 10")
+(True, 15)
 >>> 
 ```
 The bounds required bounds are added to the `boundsint` table using the `add_boundsint()` function, which takes the `measurementtype` id (returned from the `add_measurement()` method) as a parameter:
 ```
->>> dw.add_boundsint(1, 14, 1, 6)
+>>> dw.add_boundsint(2, 15, 1, 6)
 True
 >>> 
 ```
@@ -292,7 +292,7 @@ Examining the `boundsint` table in `psql` shows us the added bounds entry
 dw_tutorial=# SELECT * FROM boundsint;
  measurementtype | minval | maxval | study 
 -----------------+--------+--------+-------
-              14 |      1 |      6 |     1
+              15 |      1 |      6 |     2
 (1 row)
 
 dw_tutorial=# 
@@ -300,7 +300,7 @@ dw_tutorial=#
 #### Bounded reals (`valtype` 8)
 We can do the same thing for bounded floating point numbers. The researchers have decided that the "Stride Length" should be subject to some constraints; no-one should have a stride longer than say 3.5m, and a measurement under 5cm doesn't count as a stride. The "Stride Length" measurement type already exists (with ID 11) so we can immediately add some bounds to the data warehouse. Note that the bounds must be given in the units of the measurement; the DW has no knowledge of the meaning of the units and cannot enforece this, it is up to the DW maintainer / researcher to ensure this.
 ```
->>> dw.add_boundsreal(1, 11, 0.05, 3.5)
+>>> dw.add_boundsreal(2, 12, 0.05, 3.5)
 True
 >>> 
 ```
@@ -309,7 +309,7 @@ In `psql`:
 dw_tutorial=# SELECT * FROM boundsreal;
  measurementtype | minval | maxval | study 
 -----------------+--------+--------+-------
-              11 |   0.05 |    3.5 |     1
+              13 |   0.05 |    3.5 |     2
 (1 row)
 
 dw_tutorial=# 
@@ -318,7 +318,7 @@ dw_tutorial=#
 Lastley the DW allows bounded `datetime` types. Datetimes suppled to the DW client are Python `datetime.datetime` objects. Let's add a constraint on the "Biopsy Date" measurement type (id 7), which we have decided cannot have been carried out before 01/01/2022. We set a maximum date of some conveniently large time in the future in this case.
 ```
 import datetime
->>> dw.add_boundsdatetime(1, 7, datetime.datetime(2022, 1, 1), datetime.datetime(2122, 1, 1))
+>>> dw.add_boundsdatetime(2, 8, datetime.datetime(2022, 1, 1), datetime.datetime(2122, 1, 1))
 True
 >>> 
 ```
@@ -327,7 +327,7 @@ In `psql`,
 dw_tutorial=# SELECT * FROM boundsdatetime;
  measurementtype | study |       minval        |       maxval        
 -----------------+-------+---------------------+---------------------
-               7 |     1 | 2022-01-01 00:00:00 | 2122-01-01 00:00:00
+               7 |     2 | 2022-01-01 00:00:00 | 2122-01-01 00:00:00
 (1 row)
 
 dw_tutorial=# 
@@ -336,38 +336,38 @@ dw_tutorial=#
 ### Connecting `measurementgroup`s to `measurementtype`s
 So far we have defined a set of *measurement groups* and a set of *measurement types*, but they are currently not linked. Measurement groups exist to collect measurement types together, i.e. a `measurementgroup` has `measurementtype` members. The `connect_mt_to_mg()` method establishes a connection between a measurement type and a measurement group. Note that this table describes a many-to-many relationship, and `measurementtype`s can be members of multiple `measurementgroup`s.
 ```
->>> dw.connect_mt_to_mg(1, 1, 1, "G1")
+>>> dw.connect_mt_to_mg(2, 2, 2, "G1")
 True
->>> dw.connect_mt_to_mg(1, 2, 1, "G3")
+>>> dw.connect_mt_to_mg(2, 3, 2, "G3")
 True
->>> dw.connect_mt_to_mg(1, 3, 1, "G5")
+>>> dw.connect_mt_to_mg(2, 4, 2, "G5")
 True
->>> dw.connect_mt_to_mg(1, 4, 1, "GC1")
+>>> dw.connect_mt_to_mg(2, 5, 2, "GC1")
 True
->>> dw.connect_mt_to_mg(1, 5, 1, "C5")
+>>> dw.connect_mt_to_mg(2, 6, 2, "C5")
 True
->>> dw.connect_mt_to_mg(1, 6, 1, "C5.1")
+>>> dw.connect_mt_to_mg(2, 7, 2, "C5.1")
 True
->>> dw.connect_mt_to_mg(1, 7, 1, "X1")
+>>> dw.connect_mt_to_mg(2, 8, 2, "X1")
 True
->>> dw.connect_mt_to_mg(1, 8, 1, "C14.5")
+>>> dw.connect_mt_to_mg(2, 9, 2, "C14.5")
 True
->>> dw.connect_mt_to_mg(1, 9, 2, "WB1")
+>>> dw.connect_mt_to_mg(2, 10, 3, "WB1")
 True
->>> dw.connect_mt_to_mg(1, 10, 2, "WB2")
+>>> dw.connect_mt_to_mg(2, 11, 3, "WB2")
 True
->>> dw.connect_mt_to_mg(1, 11, 2, "WB3")
+>>> dw.connect_mt_to_mg(2, 12, 3, "WB3")
 True
->>> dw.connect_mt_to_mg(1, 12, 2, "WB4")
+>>> dw.connect_mt_to_mg(2, 13, 3, "WB4")
 True
->>> dw.connect_mt_to_mg(1, 13, 3, "TS1")
+>>> dw.connect_mt_to_mg(2, 14, 4, "TS1")
 True
->>> dw.connect_mt_to_mg(1, 14, 1, "C14.10")
+>>> dw.connect_mt_to_mg(2, 15, 2, "C14.10")
 True
->>> dw.get_all_measurement_groups(1)
-[(1, 'Q321'), (2, 'GFIT'), (3, 'Unilever Temperature Sensor')]
->>> dw.get_all_measurement_groups_and_types_in_a_study(1)
-[(1, 1, 'G1'), (1, 2, 'G3'), (1, 3, 'G5'), (1, 4, 'GC1'), (1, 5, 'C5'), (1, 6, 'C5.1'), (1, 7, 'X1'), (1, 8, 'C14.5'), (1, 14, 'C14.10'), (2, 9, 'WB1'), (2, 10, 'WB2'), (2, 11, 'WB3'), (2, 12, 'WB4'), (3, 13, 'TS1')]
+>>> dw.get_all_measurement_groups(2)
+[(2, 'Q321'), (3, 'GFIT'), (4, 'Temperature Sensor')]
+>>> dw.get_all_measurement_groups_and_types_in_a_study(2)
+[(2, 2, 'G1'), (2, 3, 'G3'), (2, 4, 'G5'), (2, 5, 'GC1'), (2, 6, 'C5'), (2, 7, 'C5.1'), (2, 8, 'X1'), (2, 9, 'C14.5'), (2, 15, 'C14.10'), (3, 10, 'WB1'), (3, 11, 'WB2'), (3, 12, 'WB3'), (3, 13, 'WB4'), (4, 14, 'TS1')]
 >>> 
 ```
 In `psql`:
@@ -375,20 +375,20 @@ In `psql`:
 dw_tutorial=# SELECT * FROM measurementtypetogroup;
  measurementtype | measurementgroup |  name  | study | optional 
 -----------------+------------------+--------+-------+----------
-               1 |                1 | G1     |     1 | f
-               2 |                1 | G3     |     1 | f
-               3 |                1 | G5     |     1 | f
-               4 |                1 | GC1    |     1 | f
-               5 |                1 | C5     |     1 | f
-               6 |                1 | C5.1   |     1 | f
-               7 |                1 | X1     |     1 | f
-               8 |                1 | C14.5  |     1 | f
-               9 |                2 | WB1    |     1 | f
-              10 |                2 | WB2    |     1 | f
-              11 |                2 | WB3    |     1 | f
-              12 |                2 | WB4    |     1 | f
-              13 |                3 | TS1    |     1 | f
-              14 |                1 | C14.10 |     1 | f
+               2 |                2 | G1     |     1 | f
+               3 |                2 | G3     |     1 | f
+               4 |                2 | G5     |     1 | f
+               5 |                2 | GC1    |     1 | f
+               6 |                2 | C5     |     1 | f
+               7 |                2 | C5.1   |     1 | f
+               8 |                2 | X1     |     1 | f
+               9 |                2 | C14.5  |     1 | f
+              10 |                3 | WB1    |     1 | f
+              11 |                3 | WB2    |     1 | f
+              12 |                3 | WB3    |     1 | f
+              13 |                3 | WB4    |     1 | f
+              14 |                4 | TS1    |     1 | f
+              15 |                2 | C14.10 |     1 | f
 (14 rows)
 
 dw_tutorial=# 
@@ -399,16 +399,16 @@ All data added to the data warehouse comes from a `source`, e.g. a clinical eval
 
 `sourcetype` entries can have an optional "version" label.
 ```
->>> dw.add_sourcetype(1, "Test Type")
+>>> dw.add_sourcetype(2, "Test Type")
 0
->>> dw.add_sourcetype(1, "q321", 1)
+>>> dw.add_sourcetype(2, "q321", 1)
 1
->>> dw.add_sourcetype(1, "GFIT", 27)
+>>> dw.add_sourcetype(2, "GFIT", 27)
 2
->>> dw.add_sourcetype(1, "Unilever Temperature Sensor", 12)
+>>> dw.add_sourcetype(2, "Temperature Sensor", 12)
 3
->>> dw.get_sourcetypes(1)
-[(0, 'Test Type'), (1, 'q321'), (2, 'GFIT'), (3, 'Unilever Temperature Sensor')]
+>>> dw.get_sourcetypes(2)
+[(1, 'Test Type'), (2, 'q321'), (3, 'GFIT'), (4, 'Unilever Temperature Sensor')]
 >>> 
 ```
 in `psql`:
@@ -416,24 +416,24 @@ in `psql`:
 dw_tutorial=# SELECT * FROM sourcetype;
  id |         description         | version | study 
 ----+-----------------------------+---------+-------
-  0 | Test Type                   | NULL    |     1
-  1 | q321                        | 1       |     1
-  2 | GFIT                        | 27      |     1
-  3 | Unilever Temperature Sensor | 12      |     1
+  1 | Test Type                   | NULL    |     2
+  2 | q321                        | 1       |     2
+  3 | GFIT                        | 27      |     2
+  4 | Temperature Sensor          | 12      |     2
 (4 rows)
 
 dw_tutorial=# 
 ```
 Adding sources:
 ```
->>> dw.add_source(1, "Test")
-0
->>> dw.add_source(1, 1)
+>>> dw.add_source(2, "Test")
 1
 >>> dw.add_source(2, 1)
 2
->>> dw.add_source(3, 3267)
+>>> dw.add_source(3, 1)
 3
+>>> dw.add_source(4, 3267)
+4
 >>> 
 ```
 `psql` (there's no Python funcion for querying the source table yet):
@@ -441,10 +441,10 @@ Adding sources:
 dw_tutorial=# SELECT * FROM source;
  id | sourceid | sourcetype | study 
 ----+----------+------------+-------
-  0 | Test     |          1 |     1
-  1 | 1        |          1 |     1
-  2 | 1        |          2 |     1
-  3 | 3267     |          3 |     1
+  1 | Test     |          2 |     2
+  2 | 1        |          2 |     2
+  3 | 1        |          3 |     2
+  4 | 3267     |          4 |     2
 (4 rows)
 
 dw_tutorial=# 
@@ -453,12 +453,12 @@ dw_tutorial=#
 ### Adding participants
 Measurements in a study can be, although don't have to be, associated with a *Participant*. Participants are added to the data warehouse with an `add_participant()` method. The `get_participants()` method returns a list of all of the participants attached to a study.
 ```
->>> dw.add_participant(1, "Test User")
-0
->>> dw.add_participant(1, "P123456")
+>>> dw.add_participant(2, "Test Participant")
 1
->>> dw.get_participants(1)
-[(0, 'Test User'), (1, 'P123456')]
+>>> dw.add_participant(2, "P123456")
+2
+>>> dw.get_participants(2)
+[(1, 'Test Participant'), (2, 'P123456')]
 >>> 
 ```
 
