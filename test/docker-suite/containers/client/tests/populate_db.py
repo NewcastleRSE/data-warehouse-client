@@ -1,3 +1,5 @@
+import datetime
+
 from data_warehouse_client import data_warehouse
 
 def add_studies(dw):
@@ -5,61 +7,61 @@ def add_studies(dw):
     dw.add_study("Test Data")
 
 def add_trials(dw):
-    study = dw.get_study("Study One")
-    dw.add_trial(study, "Baseline")
-    dw.add_trial(study, "6-month follow-up")
-    dw.add_trial(study, "12-month follow-up")
+    study = dw.get_study("Study One")[1]
+    dw.insert_trial(study, "Baseline")
+    dw.insert_trial(study, "6-month follow-up")
+    dw.insert_trial(study, "12-month follow-up")
 
-def add_measurementgroups(dw):
-    study = dw.get_study("Study One")
-    dw.add_measurementgroup(study, "Test Group")
-    study = dw.get_study("Test Data")
-    dw.add_measurementgroup(study, "Q321")
-    dw.add_measurementgroup(study, "GFIT")
-    dw.add_measurementgroup(study, "Temperature Sensor")
+def add_measurement_groups(dw):
+    study = dw.get_study("Study One")[1]
+    dw.add_measurement_group(study, "Test Group")
+    study = dw.get_study("Test Data")[1]
+    dw.add_measurement_group(study, "Q321")
+    dw.add_measurement_group(study, "GFIT")
+    dw.add_measurement_group(study, "Temperature Sensor")
 
 def add_units(dw):
-    study = dw.get_study("Test Data")
+    study = dw.get_study("Test Data")[1]
     dw.add_unit(study, "Test Unit")
     dw.add_unit(study, "mg")
     dw.add_unit(study, "metres")
     dw.add_unit(study, "steps per minute")
     dw.add_unit(study, "Celsius")
 
-def add_measurementtypes(dw):
-    study = dw.get_study("Study One")
-    dw.add_measurementtype(study, 4, "Test Type")
-    study = dw.get_study("Test Data")
-    dw.add_measurementtype(study, 4, "Participant has read PIS")
-    dw.add_measurementtype(study, 3, "Date of Birth")
-    dw.add_measurementtype(study, 5, "Gender")
-    dw.add_measurementtype(study, 4, "Comorbidity: PIT")
-    dw.add_measurementtype(study, 2, "Name of Drug")
-    dw.add_measurementtype(study, 1, "Dosage", 1)
-    dw.add_measurementtype(study, 3, "Biopsy Date")
-    dw.add_measurementtype(study, 6, "KCCQ clinical evaluation form, Item 5")
-    dw.add_measurementtype(study, 1, "AWS", 2)
-    dw.add_measurementtype(study, 1, "Distance", 2)
-    dw.add_measurementtype(study, 1, "Stride Length", 2)
-    dw.add_measurementtype(study, 1, "Cadence", 3)
-    dw.add_measurementtype(study, 1, "Temperature", 4)
-    dw.add_measurementtype(study, 7, "KCCQ clinical evaluation form, Item 10")
+def add_measurement_types(dw):
+    study = dw.get_study("Study One")[1]
+    dw.add_measurement_type(study, 4, "Test Type")
+    study = dw.get_study("Test Data")[1]
+    dw.add_measurement_type(study, 4, "Participant has read PIS")
+    dw.add_measurement_type(study, 3, "Date of Birth")
+    dw.add_measurement_type(study, 5, "Gender")
+    dw.add_measurement_type(study, 4, "Comorbidity: PIT")
+    dw.add_measurement_type(study, 2, "Name of Drug")
+    dw.add_measurement_type(study, 1, "Dosage", 1)
+    dw.add_measurement_type(study, 3, "Biopsy Date")
+    dw.add_measurement_type(study, 6, "KCCQ clinical evaluation form, Item 5")
+    dw.add_measurement_type(study, 1, "AWS", 2)
+    dw.add_measurement_type(study, 1, "Distance", 2)
+    dw.add_measurement_type(study, 1, "Stride Length", 2)
+    dw.add_measurement_type(study, 1, "Cadence", 3)
+    dw.add_measurement_type(study, 1, "Temperature", 4)
+    dw.add_measurement_type(study, 7, "KCCQ clinical evaluation form, Item 10")
 
 def add_categories(dw):
-    study = dw.get_study("Test Data")
+    study = dw.get_study("Test Data")[1]
     dw.add_category(study, ["Y", "N"], 2)
     dw.add_category(study, ["Male", "Female", "Prefer not to say"], 4)
     dw.add_category(study, ["Y", "N"], 5)
     dw.add_category(study, ["Every Night", "3-4 times per week", "1-2 times per week", "Less than once per week", "Never over the past 2 weeks"], 9)
 
 def add_boundsvals(dw):
-    study = dw.get_study("Test Data")
+    study = dw.get_study("Test Data")[1]
     dw.add_boundsint(study, 15, 1, 6)
     dw.add_boundsreal(study, 13, 0.05, 3.5)
     dw.add_boundsdatetime(study, 8, datetime.datetime(2022, 1, 1), datetime.datetime(2122, 1, 1))
 
 def link_mgts(dw):
-    study = dw.get_study("Test Data")
+    study = dw.get_study("Test Data")[1]
     dw.connect_mt_to_mg(study, 2, 2, "G1")
     dw.connect_mt_to_mg(study, 3, 2, "G3")
     dw.connect_mt_to_mg(study, 4, 2, "G5")
@@ -76,35 +78,35 @@ def link_mgts(dw):
     dw.connect_mt_to_mg(study, 15, 2, "C14.10")
 
 def add_sourcetypes(dw):
-    study = dw.get_study("Test Data")
-    dw.add_sourcetype(study, "Test Type")
-    dw.add_sourcetype(study, "q321", 1)
-    dw.add_sourcetype(study, "GFIT", 27)
-    dw.add_sourcetype(study, "Temperature Sensor", 12)
+    study = dw.get_study("Test Data")[1]
+    dw.insert_sourcetype(study, "Test Type")
+    dw.insert_sourcetype(study, "q321", 1)
+    dw.insert_sourcetype(study, "GFIT", 27)
+    dw.insert_sourcetype(study, "Temperature Sensor", 12)
 
 def add_sources(dw):
-    dw.add_source(2, "Test")
-    dw.add_source(2, 1)
-    dw.add_source(3, 1)
-    dw.add_source(4, 3267)
+    dw.insert_source(2, "Test")
+    dw.insert_source(2, 1)
+    dw.insert_source(3, 1)
+    dw.insert_source(4, 3267)
 
 def add_participants(dw):
-    study = dw.get_study("Test Data")
-    dw.add_participant(study, "Test Participant")
-    dw.add_participant(study, "P123456")
+    study = dw.get_study("Test Data")[1]
+    dw.insert_participant(study, "Test Participant")
+    dw.insert_participant(study, "P123456")
 
 def add_measurements(dw):
-    study = dw.get_study("Test Data")
-    values_1 = [(1, 4, 1), (2, 3, "1962-07-24"), (3, 5, 2), (4, 4, 0), (5, 2, "Parabennylzo Phetatine"), (6, 1, 2.50), (7, 3, "2012-09-07 06:10:00"), (8, 6, 3), (14, 7, 2)]
-    values_2 = [(9, 1, 4.30), (10, 1, 1.03), (11, 1, 22.00), (12, 1, 5.30)]
-    values_3a = [(13, 1, 37.50)]
-    values_3b = [(13, 1, 36.40)]
-    values_3c = [(13, 1, 35.80)]
-    time_1 = "2020-03-08 14:05"
-    time_2 = "2020-03-11 11:03"
-    time_3a = "2020-06-16 01:02"
-    time_3b = "2020-05-11 13:03"
-    time_3c = "2020-05-11 17:05"
+    study = dw.get_study("Test Data")[1]
+    values_1 = [(2, 4, 1), (3, 3, datetime.datetime.fromisoformat("1962-07-24")), (4, 5, 2), (5, 4, 0), (6, 2, "Parabennylzo Phetatine"), (7, 1, 2.50), (8, 3, "2012-09-07 06:10:00"), (9, 6, 3), (15, 7, 2)]
+    values_2 = [(10, 1, 4.30), (11, 1, 1.03), (12, 1, 22.00), (13, 1, 5.30)]
+    values_3a = [(14, 1, 37.50)]
+    values_3b = [(14, 1, 36.40)]
+    values_3c = [(14, 1, 35.80)]
+    time_1 = datetime.datetime.fromisoformat("2020-03-08T14:05")
+    time_2 = datetime.datetime.fromisoformat("2020-03-11T11:03")
+    time_3a = datetime.datetime.fromisoformat("2020-06-16T01:02")
+    time_3b = datetime.datetime.fromisoformat("2020-05-11T13:03")
+    time_3c = datetime.datetime.fromisoformat("2020-05-11T17:05")
     dw.insert_measurement_group(2, 2, values_1, time_1, None, 1, 1, None)
     dw.insert_measurement_group(2, 3, values_2, time_2, None, None, 2, None)
     dw.insert_measurement_group(2, 4, values_3a, time_3a, None, None, 3, None)

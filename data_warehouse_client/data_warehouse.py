@@ -196,8 +196,9 @@ class DataWarehouse:
     def return_query_result(self: object, query_text: str) -> list:
         """
         Executes an SQL query. It is used for SELECT queries.
-        :param query_text: the SQL
-        :return: the result as a list of rows.
+        :param query_text: The SQL query text.
+        :return: The result as a list of rows. If there are no matches an
+        empty list is returned.
         """
         # TODO verify best practice exception handling and rollback
         cur = self.dbConnection.cursor()
@@ -210,7 +211,7 @@ class DataWarehouse:
             self.dbConnection.rollback()
             raise
 
-
+    # TODO: This function is never used, and it should be!
     def exec_insert_with_return(self: object, query_text: str) -> list:
         """
         Executes INSERT, commits the outcome and returns the result from the RETURNING clause.
@@ -243,7 +244,7 @@ class DataWarehouse:
             print(f"Error: {e}")
             self.dbConnection.rollback()
             raise
-        
+
 
     ###########################################################################
     # Measurements methods
@@ -450,6 +451,7 @@ class DataWarehouse:
             return False
 
 
+    # TODO: return better values from this function (bool, id)
     def add_measurement_type(self, study: int, valtype: int, description: str, unit=None) -> int:
         """
         Adds a new measurementtype. A combination of the descriptive names and
@@ -481,20 +483,18 @@ class DataWarehouse:
             return False, res[0][0]
         
         # Add the new measurementtype
-        q = " SELECT MAX(id) FROM measurementtype; "
-        res = self.return_query_result(q)  # find the biggest id
-        max_id = res[0][0]
-        if max_id is None:
-            free_id = 0
-        else:
-            free_id = max_id + 1  # the next free id
-        cur.execute("""
-                    INSERT INTO measurementtype (id, description, valtype, units, study)
-                    VALUES (%s, %s, %s, %s, %s);
-                    """,
-                    (free_id, description, valtype, unit, study))  # insert the new entry
-        self.dbConnection.commit()
-        return True, free_id
+        try:
+            cur.execute("""
+                        INSERT INTO measurementtype (id, description, valtype, units, study)
+                        VALUES (DEFAULT, %s, %s, %s, %s);
+                        """,
+                        (description, valtype, unit, study))  # insert the new entry
+            self.dbConnection.commit()
+        except Exception as e:
+            print(f"Error: {e}")
+            self.dbConnection.rollback()
+            raise
+        return True, None
 
     
     ###########################################################################
@@ -907,7 +907,7 @@ class DataWarehouse:
         return len(res)>0
 
 
-    def add_sourcetype(self, study: int, description: str, version=None) -> tuple:
+    def insert_sourcetype(self, study: int, description: str, version=None) -> tuple:
         """
         Adds a sourcetype
         :param study: the study that the sourcetype is attached to
@@ -923,19 +923,18 @@ class DataWarehouse:
         res = self.return_query_result(q)  # find the biggest id
         max_id = res[0][0]
         if max_id is None:
-            free_id = 0
+            free_id = 1
         else:
             free_id = max_id + 1  # the next free id
         cur.execute("""
                     INSERT INTO sourcetype (id, study, description, version)
-                    VALUES (%s, %s, %s, %s);
+                    VALUES (DEFAULT, %s, %s, %s);
                     """,
-                    (free_id,
-                     study,
+                    (study,
                      description,
                      ("NULL" if not version else version)))  # insert the new entry
         self.dbConnection.commit()
-        return free_id
+        return True, free_id
     
 
     def update_sourcetype_version(self, id: int, version: str) -> tuple:
@@ -958,16 +957,17 @@ class DataWarehouse:
         return id
 
 
-    def get_source_by_description(self, description: str, sourcetype) -> tuple:
+    def get_source_by_description(self: object, sourcetype: int, sourceid: str) -> tuple:
         """
         Gets a source entry corresponding to a description of a source
-        :param description: the description
+        :param: sourceid: the type of source
+        :param: description: the description
         :return: (id, description, sourcetype, study)
         """
         q = """
             SELECT id FROM source
-            WHERE source.sourceid='{}' and source.sourcetype='{}';
-            """.format(description, sourcetype)
+            WHERE source.sourcetype='{}' and source.sourceid='{}';
+            """.format(sourcetype, sourceid)
         res = self.return_query_result(q)
         if len(res) > 0:
             return True, res[0][0]
@@ -975,7 +975,7 @@ class DataWarehouse:
             return False, res
         
 
-    def add_source(self, sourcetype: int, sourceid: str) -> tuple:
+    def insert_source(self: object, sourcetype: int, sourceid: str) -> tuple:
         """
         Adds a source. This doesn't check for duplicate names.
         :param sourcetype: the sourcetype id that the source is an instance of
@@ -989,32 +989,26 @@ class DataWarehouse:
             """.format(sourcetype)
         res = self.return_query_result(q)
         study = res[0][0]
-        if study is None:
-            return None
-        
-        # Get next free ID
-        q = """
-            SELECT MAX(id) FROM source;
-            """
-        res = self.return_query_result(q)
-        max_id = res[0][0]
-        if max_id is None:
-            free_id = 0
-        else:
-            free_id = max_id + 1  # the next free id
+        if study == []:
+            return False, None
         
         # Insert new entry
+        # TODO this should use a standard function with exception handling
+        # TODO using cur.mogrify to produce the string
         cur = self.dbConnection.cursor()
-        cur.execute("""
-                    INSERT INTO source (id, sourceid, sourcetype, study)
-                    VALUES (%s, %s, %s, %s);
-                    """,
-                    (free_id,
-                     sourceid,
-                     sourcetype,
-                     study))
-        self.dbConnection.commit()
-        return free_id
+        try:
+            cur.execute("""
+                        INSERT INTO source (id, sourceid, sourcetype, study)
+                        VALUES (DEFAULT, %s, %s, %s);
+                        """,
+                        (sourceid, sourcetype, study))
+            self.dbConnection.commit()
+        except Exception as e:
+            print(f"Error {e}")
+            self.dbConnection.rollback()
+            raise
+
+        return self.get_source_by_description(sourcetype, sourceid)
     
 
     ###########################################################################
@@ -1039,15 +1033,15 @@ class DataWarehouse:
             return found, None
 
 
-    def get_participant(self, study_id, local_participant_id):
+    def get_participant(self: object, study: int, local_participant_id: str) -> tuple:
         """
-        maps from a participantid that is local to the study, to the unique id stored with measurements in the warehouse
+        Returns the unique id of a participant referenced by its local
         :param study_id: the study id
         :param local_participant_id: the local participant id in the study
         :return The id of the participant
         """
         q = " SELECT id FROM participant " \
-            " WHERE participant.study       = " + str(study_id) + \
+            " WHERE participant.study       = " + str(study) + \
             " AND participant.participantid = '" + local_participant_id + "';"
         res = self.return_query_result(q)
         found = len(res) == 1
@@ -1070,7 +1064,7 @@ class DataWarehouse:
         return res
 
 
-    def add_participant(self: object, study_id: int, local_participant_id) -> tuple:
+    def insert_participant(self: object, study_id: int, local_participant_id: str) -> tuple:
         """
         add a participant into the data warehouse
         :param study_id: the study id
@@ -1087,7 +1081,11 @@ class DataWarehouse:
         return self.get_participant(study_id, local_participant_id)
 
 
-    def add_participant_if_new(self, study_id, participant_id, local_participant_id):
+    ###########################################################################
+    # WARNING: This function doesn't look like it works properly, consider
+    # removal / updating. Have disabled it for now as it looks like it could
+    # corrupt indexes
+    def add_participant_if_new(self: object, study: int, participant_id: int, local_participant_id: str):
         """
         add a participant into the data warehouse unless they already exist
         :param study_id: the study id
@@ -1095,10 +1093,12 @@ class DataWarehouse:
         :param local_participant_id: the local name for the participant
         :res (participant_added, new participant id)
         """
+        print("Function 'add_participant_if_new()' is disabled")
+        return
         cur = self.dbConnection.cursor()
 
         q = " SELECT id, participantid FROM participant " \
-            " WHERE participant.study = " + str(study_id) + \
+            " WHERE participant.study = " + str(study) + \
             " AND participant.id =  " + str(participant_id) + ";"
         res = self.return_query_result(q)
         participant_already_exists = len(res) > 0
@@ -1109,7 +1109,7 @@ class DataWarehouse:
                         INSERT INTO participant(id,participantid,study)
                         VALUES (%s, %s, %s);
                         """,
-                        (participant_id, local_participant_id, study_id))  # insert the new entry
+                        (participant_id, local_participant_id, study))  # insert the new entry
             self.dbConnection.commit()
             return True, participant_id
 
@@ -1117,7 +1117,7 @@ class DataWarehouse:
     ###########################################################################
     # Study methods
     ###########################################################################
-    def studyp(self, id: int) -> bool:
+    def studyp(self: object, id: int) -> bool:
         """
         Study existence predicate
         :param: study id
@@ -1229,7 +1229,7 @@ class DataWarehouse:
         return res
 
 
-    def add_trial(self, study: int, trial_description: str) -> int:
+    def insert_trial(self: object, study: int, trial_description: str) -> int:
         """
         Add a trial into the data warehouse, for a particular study
         :param study: the study id to attach the trial to
@@ -1237,20 +1237,27 @@ class DataWarehouse:
         :return the database id of the new trial
         """
         cur = self.dbConnection.cursor()
-        q = " SELECT MAX(id) FROM trial; "
-        res = self.return_query_result(q)  # find the biggest id
+        q = cur.mogrify("SELECT MAX(id) FROM trial WHERE study = %s;", (study,))
+        res = self.return_query_result(q)  # Find the biggest id in the study
         max_id = res[0][0]
         if max_id is None:
-            free_id = 0
+            free_id = 1
         else:
             free_id = max_id + 1  # the next free id
-        cur.execute("""
-                    INSERT INTO trial (id, study, description)
-                    VALUES (%s, %s, %s);
-                    """,
-                    (free_id, study, trial_description))  # insert the new entry
-        self.dbConnection.commit()
-        return free_id
+        # TODO: call the correct function which has exception and rollback handling
+        try:
+
+            cur.execute("""
+                        INSERT INTO trial (id, study, description)
+                        VALUES (%s, %s, %s);
+                        """,
+                        (free_id, study, trial_description))  # insert the new entry
+            self.dbConnection.commit()
+        except Exception as e:
+            print(f"Error {e}")
+            self.dbConnection.rollback()
+            raise
+        return True, free_id
     
 
     def add_trial_if_unique(self, study: int, trial_description: str) -> tuple:
