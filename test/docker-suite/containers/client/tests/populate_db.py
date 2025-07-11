@@ -13,6 +13,11 @@ import time
 from data_warehouse_client import data_warehouse
 
 # Arguments
+parser = argparse.ArgumentParser(
+    prog = "PopulateDB"
+)
+parser.add_argument("credentials_file")
+parser.add_argument("dbname")
 
 # Data generators
 def normal_float(mu, sigma, drift=(0,0)):
@@ -289,7 +294,8 @@ def reset_data_warehouse(dw):
 
 
 if __name__ == "__main__":
-    dw = data_warehouse.DataWarehouse(credentials_file, dbname)
+    args = parser.parse_args()
+    dw = data_warehouse.DataWarehouse(args.credentials_file, args.dbname)
     add_studies(dw)
     add_trials(dw)
     add_measurement_groups(dw)
