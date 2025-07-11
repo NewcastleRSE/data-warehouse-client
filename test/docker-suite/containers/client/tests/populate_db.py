@@ -1,7 +1,78 @@
-import datetime
+###############################################################################
+# Manage a realistic set of test data for test data warehouse installation
+###############################################################################
 
+# Python modules
+import argparse
+import datetime
+import math
+import random
+import time
+
+# User modules
 from data_warehouse_client import data_warehouse
 
+# Arguments
+
+# Data generators
+def normal_float(mu, sigma, drift=(0,0)):
+    """
+    Floating point generator with normal variation and mean drift
+    """
+    muv = mu
+    def randomval():
+        nonlocal muv, drift
+        val = random.gauss(muv, sigma)
+        diff = random.uniform(drift[0], drift[1])
+        print(diff)
+        muv = muv * (1 + diff)
+        return val
+    return randomval
+
+def normal_float_varying(mu, sigma, step, fn=lambda t : 1):
+    """
+    Floating point generator with normal variation and a step-based
+    function multiplier
+    """
+    muv = mu
+    t = 0
+    while True:
+        val = random.gauss(muv, sigma) * fn(t)
+        t += step
+        yield val
+
+# Example
+def run_example():
+    def myf(t):
+        return math.sin(t/10)
+    a = normal_float_varying(10, 0, 3, myf)
+    while True:
+        val = next(a)
+        for i in range(2*(10+int(val))):
+            print("*", end="")
+        print("")
+        time.sleep(0.1)
+
+
+def time_interval(start, interval, mu=0, sigma=0, drift=(0,0)):
+    """
+    Generates a time based on previous time + an interval.
+    The interval has a guassian ditricbution and duration drift
+    start and interval should be in unix time.
+    """
+    time = start
+    intv = interval
+    def step():
+        nonlocal start, interval, mu, sigma, drift
+        val = start + interval + random.gauss(mu, sigma)
+        intv = intv * (1 + random.uniform(-drift[0], drift[1]))
+        return val
+    return step()
+
+
+
+
+# Add elements
 def add_studies(dw):
     dw.add_study("Study One")
     dw.add_study("Test Data")
@@ -113,17 +184,121 @@ def add_measurements(dw):
     dw.insert_measurement_group(2, 4, values_3b, time_3b, None, None, 3, None)
     dw.insert_measurement_group(2, 4, values_3c, time_3c, None, None, 3, None)
 
+
+###############################################################################
+# Database management
+###############################################################################
+# FK dependencies:
+# study \
+#       |- units
+#       |- trial
+#       |- textvalue
+#       |- sourcetype
+#       |- source
+#       |- participant
+#       |- measurementtypetogroup
+#       |- measurementtype
+#       |- measurementgroup
+#       |- measurement
+#       |- datetimevalue
+#       |- category
+#       |- boundsreal
+#       |- boundsint
+#       |- boundsdatetime
+#
+# measurement \
+#             |- textvalue
+#
+# sourcetype \
+#            |- source
+#
+# source \
+#        |- measurement
+#
+# measurementgroup \
+#                  |- measurementtypetogroup
+#                  |- measurement
+#
+# measurementtype \
+#                 |- measurementtypetogroup
+#                 |- measurement
+#                 |- category
+#                 |- boundsreal
+#                 |- boundsint
+#                 |- boundsdatetime
+#
+# units \
+#       |- measurementtype
+#
+# participant \
+#             |- measurement
+#
+# trial \
+#       |- measurement
+#
+# measurement \
+#             | datetimevalue
+
+def reset_sequence(dw, table_name):
+    """
+    Reset a sequence back to the beginning and renumbers the table id column
+    according to the sequence rules
+    """
+    q = """
+        ALTER SEQUENCE "{}_Id_seq" RESTART;
+        UPDATE {} SET id = DEFAULT;
+        """.format(table_name.title(), str.lower(table_name))
+    cur = dw.dbConnection.cursor()
+    try:
+        cur.execute(q)
+        dw.dbConnection.commit()
+    except Exception as e:
+        print(f"Error: {e}")
+        dw.dbConnection.rollback()
+        raise
+
+def wipe_table(dw, table_name):
+    """
+    Super destructive remove all data from a table
+    """
+    q = """
+        DELETE FROM {};
+        """.format(str.lower(table_name))
+    cur = dw.dbConnection.cursor()
+    try:
+        cur.execute(q)
+        dw.dbConnection.commit()
+    except Exception as e:
+        print(f"Error: {e}")
+        dw.dbConnection.rollback()
+        raise
+
+def reset_units(dw):
+    pass
+
+def reset_study(dw):
+    reset_sequence(dw, "study")
+    pass
+
+def reset_data_warehouse(dw):
+    """
+    Completely reset a data warehouse, without dropping and creating the
+    underlying table structure
+    """
+    pass
+
+
 if __name__ == "__main__":
     dw = data_warehouse.DataWarehouse(credentials_file, dbname)
     add_studies(dw)
     add_trials(dw)
-    add_measurementgroups(dw)
+    add_measurement_groups(dw)
     add_units(dw)
-    add_measurementtypes(dw)
+    add_measurement_types(dw)
     add_categories(dw)
     add_boundsvals(dw)
     link_mgts(dw)
     add_sourcetypes(dw)
     add_sources(dw)
-    add_particpants(dw)
+    add_participants(dw)
     add_measurements(dw)
