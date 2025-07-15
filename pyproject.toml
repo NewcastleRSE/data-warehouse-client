@@ -36,4 +36,4 @@ classifiers = [
 Repository = "https://github.com/NewcastleRSE/data-warehouse-client/"
 
 [tool.setuptools]
-packages = ["data_warehouse_client"]
+packages = ["data_warehouse_client", "data_warehouse_client.sql"]
