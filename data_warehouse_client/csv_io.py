@@ -16,18 +16,20 @@
 from csv import writer
 
 
-def export_measurements_as_csv(rows, fname):
+def export_measurements_as_csv(rows, file):
     """
-    Stores measurements returned by queries in a CSV file
-    The input rows must be in the format produced by:
-        getMeasurements or getMeasurementsWithValueTest
+    Saves measurements returned by queries in a CSV file
+
+    :param rows: a list of rows returned by one of the following functions:
+        get_measurements()
+        get_measurements_with_value_test()
+        get_measurement_group_instances_with_value_tests()
+
+    :param fname: the filename of the output CSV file
         The output file has a header row, followed by a row for each measurement. This has the columns:
             id,time,study,participant,measurementType,typeName,measurementGroup, groupInstance,trial,valType,value
-    :param rows: a list of rows returned by getMeasurements, getMeasurementsWithValueTest or
-                    getMeasurementGroupInstancesWithValueTests
-    :param fname: the filename of the output CSV file
     """
-    with open(fname, "w", newline="", encoding="utf-8") as f:
+    with open(file, "w", newline="", encoding="utf-8") as f:
         wr = writer(f)
         wr.writerow(
             ["Id", "Time", "Study", "Participant", "Measurement Type", "Measurement Type Name", "Measurement Group",
@@ -35,7 +37,7 @@ def export_measurements_as_csv(rows, fname):
         wr.writerows(rows)
 
 
-def export_measurement_groups_as_csv(header, instances, fname):
+def export_measurement_groups_as_csv(header, instances, file):
     """
     Stores measurements returned by formMeasurementGroups in a CSV file
     The input rows must be in the format produced by formMeasurementGroups
@@ -47,7 +49,7 @@ def export_measurement_groups_as_csv(header, instances, fname):
     :param instances: a list of instances returned by formatMeasurementGroup
     :param fname: the filename of the output CSV file
     """
-    with open(fname, "w", newline="", encoding="utf-8") as f:
+    with open(file, "w", newline="", encoding="utf-8") as f:
         wr = writer(f)
         wr.writerow(header)
         wr.writerows(instances)

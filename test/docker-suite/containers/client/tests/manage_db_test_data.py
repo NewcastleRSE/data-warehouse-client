@@ -84,8 +84,8 @@ def time_step(start, interval, mu=0, sigma=0, drift=(0,0)):
 # Add elements
 def add_studies(dw):
     logger.debug(inspect.currentframe().f_code.co_name)
-    dw.add_study("Study One")
-    dw.add_study("Test Data")
+    dw.insert_study("Study One")
+    dw.insert_study("Test Data")
 
 def add_trials(dw):
     logger.debug(inspect.currentframe().f_code.co_name)
