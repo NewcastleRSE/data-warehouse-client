@@ -29,7 +29,7 @@ Retrieve a list of measurements of a specified *measurement_type* subject to a *
 </li>
 <li style="list-style-type: none;">
 
-*study* is the integer id of the `study` containing the measuremtents. *measurement_type* and a *value_test_condition* must be specified. All other arguments are optional. *value_test_condition* must be a valid SQL value expression postfix operator corresponding to the *measurement_type*. For example, if *measurement_type = 1*, i.e. a `valreal`, then *" > 5.0"* would be a valid *value_test_condition* that selects all values of the *measurement_type* greater than 5.0.
+*study* is the integer id of the `study` containing the measurements. *measurement_type* and a *value_test_condition* must be specified. All other arguments are optional. *value_test_condition* must be a valid SQL value expression postfix operator corresponding to the *measurement_type*. For example, if *measurement_type = 1*, i.e. a `valreal`, then *" > 5.0"* would be a valid *value_test_condition* that selects all values of the *measurement_type* greater than 5.0.
 
 *start_time* and *end_time* should be `datetime` objects. While the function will accept a properly formatted ISO8601 date string, a `datetime` object is robust. Future versions of the client may remove the acceptance of dates as strings.
 
