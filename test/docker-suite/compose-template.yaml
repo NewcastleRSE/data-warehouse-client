@@ -47,7 +47,7 @@ services:
     depends_on:
       pgdb:
         condition: service_healthy
-    command: /bin/bash run-tests.sh
+    command: /bin/bash -c "cd test-framework && /bin/bash run-tests.sh"
 
   ${COMPOSE_SERVICE_ADMIN}:
     image: adminer
