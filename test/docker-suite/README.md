@@ -28,6 +28,7 @@ The use of an admin tool (adminer) provides extra interactive flexibility when d
 The test suite is `make`-based and is run from the `test/docker-suite` subdirectory. To create the containers and run the tests, in a `bash` shell type
 
 ```
+make .env
 make up
 ```
 

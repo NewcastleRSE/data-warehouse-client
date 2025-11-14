@@ -43,6 +43,7 @@ services:
       - "8888:8000"
     volumes:
       - ${COMPOSE_MOUNT_LOCAL}:/client/${COMPOSE_MOUNT_CONTAINER}
+      - ./containers/client/test-override:/client/test-override
       - ../..:/data_warehouse_client
     depends_on:
       pgdb:

@@ -79,7 +79,8 @@ $(ENV_FILE) : $(ENV_FILE_DEFAULT)
 
 $(DW_CREDFILE) : $(ENV_FILE)
 	$(SHELL) $(SCRIPTS_DIR)/client-make-creds.sh
-	$(MV) $@ $(CLIENT_DOCKER_DIR)/test-framework
+	$(CP) $@ $(CLIENT_DOCKER_DIR)/test-framework
+	$(MV) $@ $(CLIENT_DOCKER_DIR)/test-override
 
 
 ###############################################################################
@@ -122,6 +123,7 @@ clean-misc:
 	$(RM) $(COMPOSE_FILE)
 ifdef DW_CREDFILE
 	$(RM) $(CLIENT_DOCKER_DIR)/test-framework/$(DW_CREDFILE)
+	$(RM) $(CLIENT_DOCKER_DIR)/test-override/$(DW_CREDFILE)
 endif
 
 clean-dirs:

@@ -13,7 +13,13 @@ output/
 input/
 reports/
 
+# Other data warehouse files - intermediate, generated and config
 datawarehouse-visualization.py
+test/docker-suite/containers/client/test-override/
+test/docker-suite/initdata/
+test/docker-suite/compose.yaml
+test/docker-suite/helpers.txt
+test/docker-suite/process.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
