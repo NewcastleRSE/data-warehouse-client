@@ -60,5 +60,16 @@ The critical operations performed in this process are database credential genera
 
 The `docker-compose` file controls the generation of the databse container including the setup of the data warehouse table structure. The creation of the Python client container uses a Dockerfile in `containers/client`, and this can be configured to use the local working data warehouse repository (default) or a data warehouse at a remote URL (useful for testing user scripts on a stable data warehouse release). The client subdirectory also contains the default test framework, Python test files and a Docker command for connecting to the Python client container in terminal mode.
 
+## adminer
+The admin interface can be accessed through a browser at `https://localhost:8080`. In the login box, use the following values defined in the `.env` file (which needs to be created using `make .env`).
+
+| Property | Value |
+| --- | --- |
+| System | PostgreSQL |
+| Server | ${COMPOSE_SERVICE_DB}
+| Username | ${POSTGRES_USER}
+| Password | ${POSTGRES_PASSWORD}
+| Database | ${POSTGRES_DB}
+
 ## Limitations
 The client test environment is not currently designed to test the integrity of the database itself, although it could be. Client functions could be tested using this framework or through mock functions in the root repository `test` subdirectory.
