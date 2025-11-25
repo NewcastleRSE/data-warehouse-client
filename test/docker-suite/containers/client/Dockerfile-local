@@ -27,6 +27,7 @@ RUN apt install postgresql-client -y
 
 COPY requirements-local.txt .
 COPY test-framework ./test-framework
+COPY test-override ./test-override
 
 RUN pip install --upgrade pip
 #RUN pip install /data_warehouse_client

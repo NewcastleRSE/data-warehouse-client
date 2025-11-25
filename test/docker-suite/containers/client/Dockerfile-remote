@@ -27,6 +27,7 @@ RUN apt install postgresql-client -y
 
 COPY requirements-remote.txt .
 COPY test-framework ./test-framework
+COPY test-framework ./test-override
 
 RUN pip install --upgrade pip
 RUN pip install -r requirements-remote.txt

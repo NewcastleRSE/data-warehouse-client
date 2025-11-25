@@ -960,9 +960,10 @@ class DataWarehouse:
     def get_source_by_description(self: object, sourcetype: int, sourceid: str) -> tuple:
         """
         Gets a source entry corresponding to a description of a source
-        :param: sourceid: the type of source
-        :param: description: the description
+        :param sourcetype: the sourcetype id that the source is an instance of
+        :param sourceid: text description of the source (e.g. a serial number)
         :return: (id, description, sourcetype, study)
+        TODO: not sure why this query needs the sourcetype argument
         """
         q = """
             SELECT id FROM source
