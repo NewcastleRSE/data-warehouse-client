@@ -18,15 +18,16 @@ LABEL maintainer="Robin Wardle <robin.wardle@newcastle.ac.uk>"
 
 WORKDIR /client
 RUN mkdir outputs
+RUN mkdir test-override
 
 RUN apt update && apt upgrade -y
 RUN apt install git -y
+RUN apt install vim -y
 RUN apt install postgresql-client -y
 
 COPY requirements-remote.txt .
-COPY testdb-credentials.json .
-COPY run-tests.sh .
-COPY tests ./tests
+COPY test-framework ./test-framework
+COPY test-framework ./test-override
 
 RUN pip install --upgrade pip
 RUN pip install -r requirements-remote.txt
