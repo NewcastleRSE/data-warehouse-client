@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-pip install setuptools
 pip install -e /data_warehouse_client
 
 exec 3>&1 1>../outputs/tests.log 2>&1
