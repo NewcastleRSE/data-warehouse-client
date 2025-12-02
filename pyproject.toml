@@ -11,9 +11,10 @@ dependencies = [
     "psycopg2",
     "tabulate",
     "pandas",
-    "ydata-profiling"
+    "ydata-profiling",
+    "unidecode"
 ]
-requires-python = ">= 3.12"
+requires-python = ">=3.12,<3.14"
 authors = [
     {name = "Paul Watson", email = "paul.watson@newcastle.ac.uk"},
 ]
