@@ -14,7 +14,7 @@
 
 pip install -e /data_warehouse_client
 
-exec 3>&1 1>outputs/tests.log 2>&1
+exec 3>&1 1>../outputs/tests.log 2>&1
 
 echo "Starting tests" 1>&3
 

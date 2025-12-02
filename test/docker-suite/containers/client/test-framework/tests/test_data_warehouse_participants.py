@@ -40,8 +40,8 @@ class TestDataWarehouse(unittest.TestCase):
         return super().tearDown()
     
     def test_add_study(self):
-        self.dw.add_study("Test Study")
+        self.dw.insert_study("Test Study")
 
     def test_add_trial(self):
-        self.dw.add_study("Test Study 2")
-        self.dw.add_trial(1, "Trial 1")
+        self.dw.insert_study("Test Study 2")
+        self.dw.insert_trial(1, "Trial 1")

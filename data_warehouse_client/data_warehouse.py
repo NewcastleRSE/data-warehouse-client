@@ -199,8 +199,14 @@ class DataWarehouse:
         :return: the result as a list of rows.
         """
         cur = self.dbConnection.cursor()
-        cur.execute(query_text)
-        return cur.fetchall()
+        try:
+            cur.execute(query_text)
+            self.dbConnection.commit()
+            return cur.fetchall()
+        except psycopg2.Error as e:
+            print(f"Error: {e}")
+            self.dbConnection.rollback()
+            raise
 
 
     def exec_insert_with_return(self, query_text):
@@ -210,9 +216,14 @@ class DataWarehouse:
         :return the result from the RETURNING clause
         """
         cur = self.dbConnection.cursor()
-        cur.execute(query_text)
-        self.dbConnection.commit()
-        return cur.fetchone()
+        try:
+            cur.execute(query_text)
+            self.dbConnection.commit()
+            return cur.fetchone()
+        except psycopg2.Error as e:
+            print(f"Error: {e}")
+            self.dbConnection.rollback()
+            raise
 
 
     def exec_sql_with_no_return(self, query_text):
@@ -221,8 +232,13 @@ class DataWarehouse:
         :param query_text: the SQL
         """
         cur = self.dbConnection.cursor()
-        cur.execute(query_text)
-        self.dbConnection.commit()
+        try:
+            cur.execute(query_text)
+            self.dbConnection.commit()
+        except psycopg2.Error as e:
+            print(f"Error: {e}")
+            self.dbConnection.rollback()
+            raise
 
 
     ###########################################################################
@@ -941,8 +957,10 @@ class DataWarehouse:
     def get_source_by_description(self, description: str, sourcetype) -> tuple:
         """
         Gets a source entry corresponding to a description of a source
-        :param description: the description
+        :param sourcetype: the sourcetype id that the source is an instance of
+        :param sourceid: text description of the source (e.g. a serial number)
         :return: (id, description, sourcetype, study)
+        TODO: not sure why this query needs the sourcetype argument
         """
         q = """
             SELECT id FROM source
@@ -1148,9 +1166,9 @@ class DataWarehouse:
             raise ValueError('Multiple studies found with local study id "{}"'.format(local_study_id))
 
 
-    def add_study(self, local_study_id):
+    def insert_study(self, local_study_id):
         """
-        Add a study into the data warehouse unless its label already exists
+        Inserts a study into the data warehouse unless its label already exists
         :param local_study_id: researcher-defined label identifying the study
         :type local_study_id: str
         :return: A tuple of two elements. The first element is True if the study exists after the execution of this
@@ -1158,31 +1176,23 @@ class DataWarehouse:
         :rtype: tuple[bool, int]
         """
 
-        inserted, id_study = self.get_study(local_study_id)
-
-        if not inserted:
-
+        exists, study_id = self.get_study(local_study_id)
+        if not exists:
             cur = self.dbConnection.cursor()
+            q = cur.mogrify(
+                """
+                INSERT INTO study (id, studyid)
+                VALUES (DEFAULT, %s)
+                RETURNING id, studyid;
+                """, (local_study_id,))  # insert the new entry
+            try:
+                res = self.exec_insert_with_return(q)
+                exists = True
+                study_id = res[0]
+            except psycopg2.Error as e:
+                raise
 
-            retry = True
-            while retry:
-                try:
-                    cur.execute(
-                        """
-                        INSERT INTO study (id, studyid)
-                        VALUES (DEFAULT, %s);
-                        """,
-                        (local_study_id,))  # insert the new entry
-                    retry = False
-                except psycopg2.errors.UniqueViolation:
-                    self.dbConnection.rollback()
-                    retry = True
-
-            self.dbConnection.commit()
-
-            inserted, id_study = self.get_study(local_study_id)
-
-        return inserted, id_study
+        return exists, study_id
 
 
     ###########################################################################
