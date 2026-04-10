@@ -29,6 +29,8 @@ COPY test-framework ./test-framework
 COPY test-override ./test-override
 
 RUN pip install --upgrade pip
+# This is needed otherwise git has a fit about it not having correct ownership
+RUN git config --global --add safe.directory /data_warehouse_client
 #RUN pip install /data_warehouse_client
 
 EXPOSE 8888
