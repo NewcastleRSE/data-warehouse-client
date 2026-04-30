@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/202-12/schema",
+	"title": "eSC Data Warehouse",
+  "description": "eScience Central Data Warehouse Schema Definition",
+	"type": "object",
+	"properties": {
+	  "studies": {
+		  "type": "array",
+			"items": {
+			  "type": "string"
+			}
+		},
+		"trials": {
+		  "type": "array",
+			"items": {
+			  "type": "object",
+				"properties": {
+					"inStudy": {
+						"type": "string"
+					},
+				  "trialName": {
+					  "type": "string"
+					}
+				}
+			}
+		},
+		"studyMeasurementTypes": {
+		  "type": "array",
+			"items": {
+			  "type": "object",
+				"properties": {
+				  "inStudy": "string",
+					"measurementTypes": "array",
+					"items": "$ref": "#/$defs/measurementType"
+				}
+			}
+		}
+	},
+	"$defs": {
+	  "measurementType": {
+		  "type": "object",
+			"properties": {
+			  "inStudy": {
+					"type": "string"
+				},
+			  "description": {
+				  "type": "string"
+				},
+				"valueType": {
+				  "type": "string"
+				},
+				"units": {
+				  "type": "string"
+				}
+		  }
+		},
+		"measurementGroup": {
+		  "type": "object",
+			"properties": {
+			  "inStudy": {
+					"type": "string"
+				},
+				"groupDescription": {
+					"type": "string"
+				},
+				"fields": {
+				  "type": "array",
+					"items": {
+					  "type": "string"
+					}
+				}
+			}
+		},
+		"valueType": {
+		  "type": "object",
+			"properties": {
+			  "typeName": {
+				  "type": "string",
+					"enum": ["Integer", "Real", "Text", "Date Time", "Boolean", "Nominal", "Ordinal", "External"]
+				},
+				"units": {
+				  "type": "string"
+				},
+				"upperBound": {
+				  "type": "string"
+				},
+				"lowerBound": {
+				  "type": "string"
+				},
+				"categories": {
+				  "type": "array",
+					"items": {
+					  "type": "string"
+					}
+				}
+			}
+		}
+	}
+}

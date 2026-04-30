@@ -1,0 +1,105 @@
+{
+	"studies": [
+		{
+		  "studyName": "5GIR Cockle Park Soils",
+		  "trialNames": [
+				"All Soil Trials"
+			],
+	    "measurementTypes": [
+			  {
+		      "description": "Site",
+		      "valueType": {
+				    "typeName": "Nominal",
+            "categories": [
+						  "Hanging Leaves Field",
+							"Tree Field",
+							"Gateway location",
+							"Gateway 2 Location",
+							"Test Point"
+						]
+					}
+				},
+			  {
+		      "description": "Water Content",
+		      "valueType": {
+				    "typeName": "Real",
+				    "units": "% vol",
+					  "upperBound": "100.0",
+					  "lowerBound": "0.0"
+					}
+				},
+				{
+			    "description": "Pore Water EC",
+				  "valueType": {
+				    "typeName": "Real",
+				    "units": "mS . m^-1",
+				    "upperBound": "1000000.0",
+				    "lowerBound": "0.0"
+				  }
+				},
+				{
+			    "description": "Soil Temperature",
+				  "valueType": {
+				    "typeName": "Real",
+				    "units": "°C",
+				    "upperBound": "100.0",
+				    "lowerBound": "-100.0"
+				  }
+				}
+	   ],
+     "measurementGroups": [
+	     {
+			   "groupDescription": "WET150",
+			   "fields": [
+			     "Location ID",
+				   "Location",
+				   "NID",
+				   "Site ID",
+				   "Site",
+				   "Latitude",
+				   "Longitude",
+				   "Water Content",
+				   "Pore Water EC",
+				   "Soil Temperature"
+			   ]
+		   }
+	   ]
+	  },
+		{
+		  "studyName": "5GIR Nafferton Dairy",
+		  "trialNames": [
+				"All Cow Trials"
+			],
+	    "measurementTypes": [
+			  {
+		      "description": "Cow EID",
+		      "valueType": {
+				    "typeName": "Integer"
+					}
+				},
+			  {
+		      "description": "Cow Date of Birth",
+		      "valueType": {
+				    "typeName": "Date Time"
+					}
+				},
+				{
+			    "description": "Cow Date of Calving",
+		      "valueType": {
+				    "typeName": "Date Time"
+					}
+				}
+	   ],
+     "measurementGroups": [
+	     {
+			   "groupDescription": "Cow Data",
+			   "fields": [
+			     "Cow EID",
+				   "Cow Date of Birth",
+				   "Cow Date of Calving"
+			   ]
+		   }
+	   ]
+	  }
+	]
+}
